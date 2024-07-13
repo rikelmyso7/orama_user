@@ -7,7 +7,7 @@ class Descartavel {
 
 // Lista de descartáveis com tipos definidos
 final List<Descartavel> descartaveis = [
-  Descartavel(name: 'ALCOOL LÍQUIDO 70', type: 'fractional'),
+  Descartavel(name: 'ALCOOL LÍQUIDO', type: 'fractional'),
   Descartavel(name: 'DETERGENTE', type: 'fractional'),
   Descartavel(name: 'ESPONJA', type: 'numeric'),
   Descartavel(name: 'ALCOOL EM GEL', type: 'fractional'),
