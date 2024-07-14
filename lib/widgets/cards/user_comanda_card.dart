@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:orama_user/pages/user/user_sabores_edit_page.dart';
 import 'package:orama_user/stores/user/user_comanda_store.dart';
 import 'package:orama_user/utils/comanda_utils.dart';
 
@@ -44,6 +45,15 @@ class UserComandaCard extends StatelessWidget {
     ComandaUtils.deleteComanda(context, comanda);
   }
 
+  void _editComanda(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => UserSaboresEditPage(comanda: comanda),
+      ),
+    );
+  }
+
   Widget _buildHeader(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
@@ -54,9 +64,17 @@ class UserComandaCard extends StatelessWidget {
             '${comanda.pdv}',
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
-          IconButton(
-            icon: const Icon(Icons.delete),
-            onPressed: () => _deleteComanda(context),
+          Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.edit),
+                onPressed: () => _editComanda(context),
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete),
+                onPressed: () => _deleteComanda(context),
+              ),
+            ],
           ),
         ],
       ),

@@ -16,7 +16,7 @@ class FieldValidators {
     if (value == null || value.isEmpty) {
       return ("Campo obrigatório");
     }
-    if (value.length < 5) {
+    if (value.length < 6) {
       return ("Senha precisa ter pelo menos 6 dígitos");
     }
     if (value.length > 20) {
@@ -31,6 +31,7 @@ class FieldValidators {
     }
     return null;
   }
+
   static String? validateQuantity(String? value) {
     if (value == null || value.isEmpty) {
       return ("Campo obrigatório");

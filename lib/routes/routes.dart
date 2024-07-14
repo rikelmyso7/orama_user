@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:orama_user/auth/authStateSwitcher.dart';
 import 'package:orama_user/pages/login_page.dart';
+import 'package:orama_user/pages/user/splash_page.dart';
 import 'package:orama_user/pages/user/user_add_descartaveis.dart';
 import 'package:orama_user/pages/user/user_add_sorvetes.dart';
 import 'package:orama_user/pages/user/user_comandas_page.dart';
@@ -11,6 +12,7 @@ import 'package:orama_user/pages/user/user_descartaveis_select.dart';
 class RouteName {
   static const auth = '/';
   static const login = "/login";
+  static const splash = "/splash";
 
   static const user_add_sorvetes = "/user_add_sorvetes";
   static const user_add_descartaveis = "/user_add_descartaveis";
@@ -28,6 +30,9 @@ class Routes {
     },
     RouteName.login: (BuildContext context) {
       return LoginPage();
+    },
+    RouteName.splash: (BuildContext context) {
+      return SplashScreen();
     },
 
 
