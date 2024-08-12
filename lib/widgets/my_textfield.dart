@@ -44,7 +44,7 @@ class MyTextField extends StatelessWidget {
                   borderSide: BorderSide(color: Colors.grey.shade400),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                fillColor: Color(0xff60C03D).withOpacity(0.1),
+                fillColor: Colors.white,
                 filled: true,
                 labelText: hintText,
                 labelStyle: MyTextStyle.hintTextFieldStyle,

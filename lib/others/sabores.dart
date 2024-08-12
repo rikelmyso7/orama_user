@@ -34,15 +34,28 @@ const Map<String, List<String>> sabores = {
     'Açaí da Amazônia (Vegano)',
     'Groselha (Vegano)',
   ],
-  'Zero Açúcar': [
+  'Massas': [
+    'Baunilha',
+    'Chocolate',
+    'Carvão',
+    'Canela',
+  ],
+  'Especiais': [
+    'Baunilha com Mirtilo',
+    'Espumante',
+    'Torta de Maçã',
+    'Bem Casados',
     'Brigadeiro com Whey',
     'Banana com Whey',
     'Caramelo com Whey',
-    'Açaí Vegano',
+    'Açaí Zero Açúcar',
     'Pitaya com Morango',
-    'Chocolate Vegano',
+    'Chocolate Zero Açúcar',
     'Uva Vegano',
-    'Limão Vegano',
-    'Coco Verde Vegano',
+    'Limão Zero Açúcar',
+    'Coco Verde Zero Açúcar',
+    'Canjica com Canela',
+    'Coco com Abobora',
+    'Abacaxi ao Vinho'
   ],
 };

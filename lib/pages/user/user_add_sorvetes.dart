@@ -16,7 +16,11 @@ class UserAddSorvetes extends StatefulWidget {
 class _UserAddSorvetesState extends State<UserAddSorvetes> {
   final TextEditingController _nameController = TextEditingController();
   final formKey = GlobalKey<FormState>();
-  DateTime _date = DateTime.now();
+  final ValueNotifier<bool> isFormValid = ValueNotifier<bool>(false);
+
+  final List<String> periodo = ["INICIO", "FINAL"];
+  String? periodoSelecionado;
+
   final List<String> pdvs = [
     "Villa Brunholli",
     "Recanto Marquezim",
@@ -30,6 +34,28 @@ class _UserAddSorvetesState extends State<UserAddSorvetes> {
     "VIBE"
   ];
   String? pdvSelecionado;
+
+  DateTime _date = DateTime.now();
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController.addListener(_validateForm);
+  }
+
+  @override
+  void dispose() {
+    _nameController.removeListener(_validateForm);
+    _nameController.dispose();
+    isFormValid.dispose();
+    super.dispose();
+  }
+
+  void _validateForm() {
+    isFormValid.value = _nameController.text.isNotEmpty &&
+        pdvSelecionado != null &&
+        periodoSelecionado != null;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -67,14 +93,15 @@ class _UserAddSorvetesState extends State<UserAddSorvetes> {
                     validator: FieldValidators.validateName,
                   ),
                   Padding(
-                    padding: const EdgeInsets.only(top: 15),
+                    padding: const EdgeInsets.only(top: 10),
                     child: MyDropDownButton(
-                      hint: "Ponto de Venda",
-                      options: pdvs,
-                      value: pdvSelecionado,
+                      hint: "Periodo",
+                      options: periodo,
+                      value: periodoSelecionado,
                       onChanged: (result) {
                         setState(() {
-                          pdvSelecionado = result;
+                          periodoSelecionado = result;
+                          _validateForm(); // Update validation state
                         });
                       },
                     ),
@@ -82,22 +109,47 @@ class _UserAddSorvetesState extends State<UserAddSorvetes> {
                   SizedBox(
                     height: 15,
                   ),
-                  MyButton(
-                    buttonName: 'Próximo',
-                    onTap: () {
-                      if (formKey.currentState!.validate()) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => UserSaboresPage(
-                              pdv: pdvSelecionado ?? '',
-                              nome: _nameController.text,
-                              data: _date
-                                  .toString(), userId: GetStorage().read('userId'), // Adjust the format as needed
-                            ),
-                          ),
-                        );
-                      }
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: MyDropDownButton(
+                      hint: "Ponto de Venda",
+                      options: pdvs,
+                      value: pdvSelecionado,
+                      onChanged: (result) {
+                        setState(() {
+                          pdvSelecionado = result;
+                          _validateForm(); // Update validation state
+                        });
+                      },
+                    ),
+                  ),
+                  SizedBox(
+                    height: 15,
+                  ),
+                  ValueListenableBuilder<bool>(
+                    valueListenable: isFormValid,
+                    builder: (context, isValid, child) {
+                      return MyButton(
+                        buttonName: 'Próximo',
+                        onTap: isValid
+                            ? () {
+                                if (formKey.currentState!.validate()) {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => UserSaboresPage(
+                                        pdv: pdvSelecionado ?? '',
+                                        nome: "${_nameController.text} (${periodoSelecionado})",
+                                        data: _date.toString(),
+                                        userId: GetStorage().read('userId'),
+                                      ),
+                                    ),
+                                  );
+                                }
+                              }
+                            : null,
+                        enabled: isValid,
+                      );
                     },
                   ),
                 ],

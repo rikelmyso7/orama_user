@@ -17,6 +17,10 @@ class _UserAddDescartaveisState extends State<UserAddDescartaveis> {
   final TextEditingController _nameController = TextEditingController();
   final formKey = GlobalKey<FormState>();
   DateTime _date = DateTime.now();
+
+  final List<String> periodo = ["INICIO", "FINAL"];
+  String? periodoSelecionado;
+
   final List<String> pdvs = [
     "Villa Brunholli",
     "Recanto Marquezim",
@@ -31,13 +35,36 @@ class _UserAddDescartaveisState extends State<UserAddDescartaveis> {
   ];
   String? pdvSelecionado;
 
+  // ValueNotifier to track the validation state of the form
+  final ValueNotifier<bool> isFormValid = ValueNotifier<bool>(false);
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController.addListener(_validateForm);
+  }
+
+  @override
+  void dispose() {
+    _nameController.removeListener(_validateForm);
+    _nameController.dispose();
+    isFormValid.dispose();
+    super.dispose();
+  }
+
+  void _validateForm() {
+    isFormValid.value = _nameController.text.isNotEmpty &&
+        pdvSelecionado != null &&
+        periodoSelecionado != null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         iconTheme: const IconThemeData(color: Colors.white),
         title: const Text(
-          "Descartaveis",
+          "Descartáveis",
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
         ),
         elevation: 4,
@@ -67,6 +94,23 @@ class _UserAddDescartaveisState extends State<UserAddDescartaveis> {
                     validator: FieldValidators.validateName,
                   ),
                   Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: MyDropDownButton(
+                      hint: "Periodo",
+                      options: periodo,
+                      value: periodoSelecionado,
+                      onChanged: (result) {
+                        setState(() {
+                          periodoSelecionado = result;
+                          _validateForm(); // Update validation state
+                        });
+                      },
+                    ),
+                  ),
+                  SizedBox(
+                    height: 15,
+                  ),
+                  Padding(
                     padding: const EdgeInsets.only(top: 15),
                     child: MyDropDownButton(
                       hint: "Ponto de Venda",
@@ -75,6 +119,7 @@ class _UserAddDescartaveisState extends State<UserAddDescartaveis> {
                       onChanged: (result) {
                         setState(() {
                           pdvSelecionado = result;
+                          _validateForm(); // Update validation state
                         });
                       },
                     ),
@@ -82,22 +127,32 @@ class _UserAddDescartaveisState extends State<UserAddDescartaveis> {
                   SizedBox(
                     height: 15,
                   ),
-                  MyButton(
-                    buttonName: 'Próximo',
-                    onTap: () {
-                      if (formKey.currentState!.validate()) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => UserDescartaveisSelect(
-                              pdv: pdvSelecionado ?? '',
-                              nome: _nameController.text,
-                              data: _date
-                                  .toString(), userId: GetStorage().read('userId'), // Adjust the format as needed
-                            ),
-                          ),
-                        );
-                      }
+                  ValueListenableBuilder<bool>(
+                    valueListenable: isFormValid,
+                    builder: (context, isValid, child) {
+                      return MyButton(
+                        buttonName: 'Próximo',
+                        onTap: isValid
+                            ? () {
+                                if (formKey.currentState!.validate()) {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          UserDescartaveisSelect(
+                                        pdv: pdvSelecionado ?? '',
+                                        nome:
+                                            "${_nameController.text} (${periodoSelecionado})",
+                                        data: _date.toString(),
+                                        userId: GetStorage().read('userId'),
+                                      ),
+                                    ),
+                                  );
+                                }
+                              }
+                            : null,
+                        enabled: isValid,
+                      );
                     },
                   ),
                 ],

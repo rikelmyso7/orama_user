@@ -24,15 +24,18 @@ class UserComandaCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(
-                  'Atendente - ${comanda.name}',
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.bold),
+                Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Text(
+                    'Atendente - ${comanda.name}',
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ],
             ),
             _buildHeader(context),
-            _buildDateRow(),
+            _buildDateRow(context),
             const SizedBox(height: 8.0),
             ..._buildSaborList(),
           ],
@@ -54,9 +57,25 @@ class UserComandaCard extends StatelessWidget {
     );
   }
 
+  void _changeDate(BuildContext context) async {
+    final DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: comanda.data,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+    );
+
+    if (pickedDate != null && pickedDate != comanda.data) {
+      comanda.data = pickedDate;
+      // Salve a nova data usando o método addOrUpdateCard do UserComandaStore
+      final store = UserComandaStore();
+      store.addOrUpdateCard(comanda);
+    }
+  }
+
   Widget _buildHeader(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.only(left: 16, right: 16, top: 16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -81,10 +100,15 @@ class UserComandaCard extends StatelessWidget {
     );
   }
 
-  Widget _buildDateRow() {
+  Widget _buildDateRow(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Text(DateFormat('dd/MM/yyyy').format(comanda.data)),
+      padding: const EdgeInsets.symmetric(horizontal: 15.0),
+      child: TextButton(
+          onPressed: () => _changeDate(context),
+          child: Text(
+            DateFormat('dd/MM/yyyy').format(comanda.data),
+            style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+          )),
     );
   }
 
@@ -112,20 +136,26 @@ class UserComandaCard extends StatelessWidget {
           return Container();
         }
 
+        final isMassa = categoria.key == 'Massas';
+        final unidade = isMassa ? 'Tubo' : 'Cuba';
+
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                saborEntry.key,
+                isMassa ? "Massa de ${saborEntry.key}" : saborEntry.key,
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               ...opcoesValidas.map((quantidadeEntry) {
                 return Padding(
                   padding: const EdgeInsets.only(left: 16.0),
                   child: Text(
-                      "- ${quantidadeEntry.value} Cuba ${quantidadeEntry.key}"),
+                    isMassa
+                        ? "- ${quantidadeEntry.key} $unidade "
+                        : "- ${quantidadeEntry.value} $unidade ${quantidadeEntry.key}",
+                  ),
                 );
               }).toList(),
             ],

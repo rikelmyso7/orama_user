@@ -2,31 +2,38 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:intl/intl.dart';
 import 'package:orama_user/routes/routes.dart';
 import 'package:orama_user/stores/user/user_comanda_store.dart';
 import 'package:orama_user/utils/exit_dialog_utils.dart';
 import 'package:orama_user/utils/scroll_hide_fab.dart';
 import 'package:orama_user/widgets/UserBottomNavigationbar.dart';
 import 'package:orama_user/widgets/cards/user_descartavel_card.dart';
+import 'package:orama_user/widgets/date_picker_widget.dart';
 
 class UserDescartaveisPage extends StatefulWidget {
   @override
   _UserDescartaveisPageState createState() => _UserDescartaveisPageState();
 }
 
-class _UserDescartaveisPageState extends State<UserDescartaveisPage> {
+class _UserDescartaveisPageState extends State<UserDescartaveisPage>
+    with SingleTickerProviderStateMixin {
   int _currentIndex = 1;
   late ScrollController _scrollController;
+  late TabController _tabController;
+  DateTime _selectedDate = DateTime.now();
 
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController();
+    _tabController = TabController(length: 2, vsync: this);
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
+    _tabController.dispose();
     super.dispose();
   }
 
@@ -40,99 +47,173 @@ class _UserDescartaveisPageState extends State<UserDescartaveisPage> {
     }
   }
 
+  void _updateSelectedDate(DateTime newDate) {
+    setState(() {
+      _selectedDate = newDate;
+    });
+  }
+
+  List<ComandaDescartaveis> filterComandasByPeriodo(
+      List<ComandaDescartaveis> comandas, String periodo) {
+    return comandas.where((comanda) {
+      return comanda.name.contains("($periodo)");
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     final userId = GetStorage().read('userId');
+    final dateFormatted = DateFormat('dd/MM/yyyy').format(_selectedDate);
+
     return PopScope(
-        canPop: false,
-        onPopInvoked: (bool didPop) async {
-          if (didPop) {
-            return;
-          }
-          final bool shouldPop =
-              await DialogUtils.showBackDialog(context) ?? false;
-          if (context.mounted && shouldPop) {
-            Navigator.pop(context);
-          }
-        },
-        child: Scaffold(
-          bottomNavigationBar: UserBottomNavigationBar(
-            currentIndex: _currentIndex,
-            onTabTapped: onTabTapped,
+      canPop: false,
+      onPopInvoked: (bool didPop) async {
+        if (didPop) {
+          return;
+        }
+        final bool shouldPop =
+            await DialogUtils.showBackDialog(context) ?? false;
+        if (context.mounted && shouldPop) {
+          Navigator.pop(context);
+        }
+      },
+      child: Scaffold(
+        bottomNavigationBar: UserBottomNavigationBar(
+          currentIndex: _currentIndex,
+          onTabTapped: onTabTapped,
+        ),
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          iconTheme: IconThemeData(color: Colors.white),
+          title: Text(
+            "Relatório Descartáveis",
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
           ),
-          appBar: AppBar(
-            iconTheme: IconThemeData(color: Colors.white),
-            title: Text(
-              "Relatório Descartáveis",
-              style:
-                  TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
-            ),
-            elevation: 4,
-            backgroundColor: const Color(0xff60C03D),
-            actions: [
-              IconButton(
-                icon: Icon(Icons.logout),
-                onPressed: () async {
-                  await FirebaseAuth.instance.signOut();
-                  Navigator.of(context).pushReplacementNamed(RouteName.login);
-                },
-              ),
-            ],
-          ),
-          body: StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance
-                .collection('users')
-                .doc(userId)
-                .collection('descartaveis')
-                .snapshots(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return Center(child: CircularProgressIndicator());
-              }
-
-              if (snapshot.hasError) {
-                return Center(child: Text("Erro ao carregar comandas"));
-              }
-
-              final comandas = snapshot.data?.docs.map((doc) {
-                    return ComandaDescartaveis.fromJson(
-                        doc.data() as Map<String, dynamic>);
-                  }).toList() ??
-                  [];
-
-              if (comandas.isEmpty) {
-                return Center(child: Text("Nenhuma relatório disponível."));
-              }
-
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 15),
-                child: ListView.builder(
-                  controller: _scrollController,
-                  itemCount: comandas.length,
-                  itemBuilder: (context, index) {
-                    return UserDescartavelCard(comanda: comandas[index]);
-                  },
-                ),
-              );
-            },
-          ),
-          floatingActionButton: ScrollHideFab(
-            scrollController: _scrollController,
-            child: FloatingActionButton.extended(
-              backgroundColor: const Color(0xff60C03D),
-              icon: Icon(
-                Icons.add,
-                color: Colors.white,
-              ),
-              label: Text(
-                'add',
-                style: TextStyle(color: Colors.white),
-              ),
-              onPressed: () {
-                Navigator.pushNamed(context, RouteName.user_add_descartaveis);
+          elevation: 4,
+          backgroundColor: const Color(0xff60C03D),
+          actions: [
+            IconButton(
+              icon: Icon(Icons.logout),
+              onPressed: () async {
+                await FirebaseAuth.instance.signOut();
+                Navigator.of(context).pushReplacementNamed(RouteName.login);
               },
             ),
+          ],
+          bottom: TabBar(
+            labelColor: Colors.white,
+            indicatorColor: Colors.amber,
+            controller: _tabController,
+            tabs: [
+              Tab(text: "INICIO"),
+              Tab(text: "FINAL"),
+            ],
           ),
-        ));
+        ),
+        body: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                DatePickerWidget(
+                  key: UniqueKey(),
+                  initialDate: _selectedDate,
+                  onDateSelected: (newDate) {
+                    _updateSelectedDate(newDate);
+                  },
+                  dateFormat: DateFormat('dd MMMM yyyy', 'pt_BR'),
+                  textStyle: const TextStyle(fontSize: 18),
+                ),
+              ],
+            ),
+            Expanded(
+              child: StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(userId)
+                    .collection('descartaveis')
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Center(child: CircularProgressIndicator());
+                  }
+
+                  if (snapshot.hasError) {
+                    return Center(child: Text("Erro ao carregar relatórios"));
+                  }
+
+                  final comandas = snapshot.data?.docs.map((doc) {
+                        final data = doc.data() as Map<String, dynamic>;
+                        DateTime comandaDate;
+                        if (data['data'] is Timestamp) {
+                          comandaDate = (data['data'] as Timestamp).toDate();
+                        } else if (data['data'] is String) {
+                          comandaDate = DateTime.parse(data['data']);
+                        } else {
+                          throw Exception('Tipo de dado inesperado para data');
+                        }
+                        return ComandaDescartaveis.fromJson(data)
+                          ..data = comandaDate;
+                      }).where((comanda) {
+                        final comandaDate = comanda.data;
+                        return comandaDate.year == _selectedDate.year &&
+                            comandaDate.month == _selectedDate.month &&
+                            comandaDate.day == _selectedDate.day;
+                      }).toList() ??
+                      [];
+
+                  if (comandas.isEmpty) {
+                    return Center(child: Text("Nenhum relatório disponível."));
+                  }
+
+                  return TabBarView(
+                    controller: _tabController,
+                    children: [
+                      ListView.builder(
+                        controller: _scrollController,
+                        itemCount:
+                            filterComandasByPeriodo(comandas, "INICIO").length,
+                        itemBuilder: (context, index) {
+                          final comanda = filterComandasByPeriodo(
+                              comandas, "INICIO")[index];
+                          return UserDescartavelCard(comanda: comanda);
+                        },
+                      ),
+                      ListView.builder(
+                        controller: _scrollController,
+                        itemCount:
+                            filterComandasByPeriodo(comandas, "FINAL").length,
+                        itemBuilder: (context, index) {
+                          final comanda =
+                              filterComandasByPeriodo(comandas, "FINAL")[index];
+                          return UserDescartavelCard(comanda: comanda);
+                        },
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+        floatingActionButton: ScrollHideFab(
+          scrollController: _scrollController,
+          child: FloatingActionButton.extended(
+            backgroundColor: const Color(0xff60C03D),
+            icon: Icon(
+              Icons.add,
+              color: Colors.white,
+            ),
+            label: Text(
+              'add',
+              style: TextStyle(color: Colors.white),
+            ),
+            onPressed: () {
+              Navigator.pushNamed(context, RouteName.user_add_descartaveis);
+            },
+          ),
+        ),
+      ),
+    );
   }
 }

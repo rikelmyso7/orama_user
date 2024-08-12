@@ -31,6 +31,10 @@ class _UserDescartaveisSelectState extends State<UserDescartaveisSelect> {
   final List<bool> showNotes = [];
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   late List<bool> showTextField;
+  late List<TextEditingController> textControllers;
+  late List<TextEditingController> noteControllers;
+  late List<FocusNode> textFocusNodes;
+  late List<FocusNode> noteFocusNodes;
 
   @override
   void initState() {
@@ -40,6 +44,28 @@ class _UserDescartaveisSelectState extends State<UserDescartaveisSelect> {
     fieldsCompleted.addAll(List<bool>.filled(descartaveis.length, false));
     showNotes.addAll(List<bool>.filled(descartaveis.length, false));
     showTextField = List<bool>.filled(descartaveis.length, false);
+    textControllers = List<TextEditingController>.generate(
+        descartaveis.length, (index) => TextEditingController());
+    noteControllers = List<TextEditingController>.generate(
+        descartaveis.length, (index) => TextEditingController());
+    textFocusNodes =
+        List<FocusNode>.generate(descartaveis.length, (index) => FocusNode());
+    noteFocusNodes =
+        List<FocusNode>.generate(descartaveis.length, (index) => FocusNode());
+
+    for (int i = 0; i < textControllers.length; i++) {
+      textControllers[i].addListener(() {
+        setState(() {
+          quantities[i] = textControllers[i].text;
+          _checkFieldsCompleted();
+        });
+      });
+      noteControllers[i].addListener(() {
+        setState(() {
+          notes[i] = noteControllers[i].text;
+        });
+      });
+    }
   }
 
   Future<void> _saveData() async {
@@ -82,7 +108,7 @@ class _UserDescartaveisSelectState extends State<UserDescartaveisSelect> {
   void _checkFieldsCompleted() {
     setState(() {
       for (int i = 0; i < descartaveis.length; i++) {
-        fieldsCompleted[i] = quantities[i] != '';
+        fieldsCompleted[i] = quantities[i].isNotEmpty;
       }
     });
   }
@@ -92,7 +118,7 @@ class _UserDescartaveisSelectState extends State<UserDescartaveisSelect> {
 
     switch (descartaveis[index].type) {
       case 'numeric':
-        options = List.generate(8, (i) => i.toString()); // Example: 0-9
+        options = List.generate(8, (i) => i.toString()); // Example: 0-7
         break;
       case 'fractional':
         options = ['Vazio', '1/4', '2/4', '3/4', '4/4'];
@@ -112,9 +138,7 @@ class _UserDescartaveisSelectState extends State<UserDescartaveisSelect> {
           spacing: 8.0,
           children: options.map((option) {
             return ChoiceChip(
-              label: Text(
-                option,
-              ),
+              label: Text(option),
               selected: quantities[index] == option ||
                   (option == 'Outro' && showTextField[index]),
               selectedColor: Color(0xff60C03D),
@@ -122,12 +146,17 @@ class _UserDescartaveisSelectState extends State<UserDescartaveisSelect> {
                 setState(() {
                   if (option == 'Outro') {
                     showTextField[index] = selected;
-                    if (!selected) {
+                    if (selected) {
+                      FocusScope.of(context)
+                          .requestFocus(textFocusNodes[index]);
+                    } else {
+                      textControllers[index].clear();
                       quantities[index] = '';
                     }
                   } else {
                     showTextField[index] = false;
                     quantities[index] = selected ? option : '';
+                    textControllers[index].clear();
                   }
                   _checkFieldsCompleted();
                 });
@@ -139,15 +168,16 @@ class _UserDescartaveisSelectState extends State<UserDescartaveisSelect> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
             child: TextField(
+              controller: textControllers[index],
+              focusNode: textFocusNodes[index],
               keyboardType: TextInputType.numberWithOptions(),
               decoration: InputDecoration(
                 labelText: 'Digite a quantidade',
                 border: OutlineInputBorder(),
+                suffixIcon: quantities[index].isNotEmpty
+                    ? Icon(Icons.check, color: Colors.green)
+                    : Icon(Icons.close, color: Colors.red),
               ),
-              onChanged: (value) {
-                quantities[index] = value;
-                _checkFieldsCompleted();
-              },
             ),
           ),
       ],
@@ -156,82 +186,93 @@ class _UserDescartaveisSelectState extends State<UserDescartaveisSelect> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        iconTheme: IconThemeData(color: Colors.white),
-        title: Text(
-          "Descartáveis - ${widget.pdv}",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+    return GestureDetector(
+      onTap: () {
+        FocusScope.of(context).unfocus();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          iconTheme: IconThemeData(color: Colors.white),
+          title: Text(
+            "Descartáveis - ${widget.pdv}",
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+          ),
+          elevation: 4,
+          backgroundColor: const Color(0xff60C03D),
         ),
-        elevation: 4,
-        backgroundColor: const Color(0xff60C03D),
-      ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16.0),
-        itemCount: descartaveis.length,
-        itemBuilder: (context, index) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 16.0),
-            child: Card(
-              elevation: 2,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 10),
-                    child: Text(
-                      descartaveis[index].name,
-                      style:
-                          TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+        body: ListView.builder(
+          padding: const EdgeInsets.all(16.0),
+          itemCount: descartaveis.length,
+          itemBuilder: (context, index) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: Card(
+                elevation: 2,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 10),
+                      child: Text(
+                        descartaveis[index].name,
+                        style: TextStyle(
+                            fontSize: 22, fontWeight: FontWeight.bold),
+                      ),
                     ),
-                  ),
-                  _buildQuantityButtons(index),
-                  SizedBox(height: 5),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text("Adicionar observações"),
-                      Transform.scale(
-                        scale: 0.8,
-                        child: Switch(
-                          activeColor: const Color(0xff60C03D),
-                          value: showNotes[index],
-                          onChanged: (value) {
-                            setState(() {
-                              showNotes[index] = value;
-                            });
-                          },
+                    _buildQuantityButtons(index),
+                    SizedBox(height: 5),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text("Adicionar observações"),
+                        Transform.scale(
+                          scale: 0.8,
+                          child: Switch(
+                            activeColor: const Color(0xff60C03D),
+                            value: showNotes[index],
+                            onChanged: (value) {
+                              setState(() {
+                                showNotes[index] = value;
+                                if (value) {
+                                  FocusScope.of(context)
+                                      .requestFocus(noteFocusNodes[index]);
+                                }
+                              });
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (showNotes[index])
+                      TextField(
+                        controller: noteControllers[index],
+                        focusNode: noteFocusNodes[index],
+                        decoration: InputDecoration(
+                          labelText: 'Observações',
+                          border: OutlineInputBorder(),
+                          suffixIcon: notes[index].isNotEmpty
+                              ? Icon(Icons.check, color: Colors.green)
+                              : Icon(Icons.close, color: Colors.red),
                         ),
                       ),
-                    ],
-                  ),
-                  if (showNotes[index])
-                    TextField(
-                      decoration: InputDecoration(
-                        labelText: 'Observações',
-                        border: OutlineInputBorder(),
-                      ),
-                      onChanged: (value) {
-                        notes[index] = value;
-                      },
-                    ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
+        floatingActionButton: fieldsCompleted.every((completed) => completed)
+            ? FloatingActionButton(
+                backgroundColor: const Color(0xff60C03D),
+                child: Icon(
+                  Icons.save,
+                  color: Colors.white,
+                ),
+                onPressed: _saveData,
+              )
+            : null,
       ),
-      floatingActionButton: fieldsCompleted.every((completed) => completed)
-          ? FloatingActionButton(
-              backgroundColor: const Color(0xff60C03D),
-              child: Icon(
-                Icons.save,
-                color: Colors.white,
-              ),
-              onPressed: _saveData,
-            )
-          : null,
     );
   }
 }

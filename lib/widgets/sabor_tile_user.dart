@@ -13,7 +13,7 @@ class UserSaborTile extends StatefulWidget {
 }
 
 class _UserSaborTileState extends State<UserSaborTile> {
-  final List<String> opcoes = ['0', '1/4', '2/4', '3/4', '4/4'];
+  late List<String> opcoes;
   late Map<String, int> quantidadePorOpcao;
   late bool isExpanded;
 
@@ -21,12 +21,16 @@ class _UserSaborTileState extends State<UserSaborTile> {
   void initState() {
     super.initState();
     final tabViewState = Provider.of<UserSaborStore>(context, listen: false);
+    
+    // Determina as opções com base na categoria
+    if (widget.categoria == 'Massas') {
+      opcoes = ['0', '1', '2', '3', '4'];
+    } else {
+      opcoes = ['0', '1/4', '2/4', '3/4', '4/4'];
+    }
+
     quantidadePorOpcao = tabViewState.saboresSelecionados[widget.categoria]?[widget.sabor] ?? {
-      '0': 0,
-      '1/4': 0,
-      '2/4': 0,
-      '3/4': 0,
-      '4/4': 0,
+      for (var opcao in opcoes) opcao: 0,
     };
     isExpanded = tabViewState.expansionState[widget.categoria]?[widget.sabor] ?? false;
   }
