@@ -20,7 +20,7 @@ jobs:
     - name: Authenticate Shorebird
       run: shorebird login
       env:
-        SHOREBIRD_TOKEN: ${{ secrets.480282d7-49a5-47a6-85ad-2edcfcf54e26 }} # Adicione seu token do Shorebird aos secrets do GitHub
+        SHOREBIRD_TOKEN: ${{ 480282d7-49a5-47a6-85ad-2edcfcf54e26 }} # Adicione seu token do Shorebird aos secrets do GitHub
     - name: Build IPA
       run: shorebird build ios
     - name: Deploy to Shorebird
