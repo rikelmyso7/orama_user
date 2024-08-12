@@ -11,10 +11,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Set up Flutter
-      uses: subosito/flutter-action@v2
-      with:
-        flutter-version: '3.0.0'
     - name: Install Shorebird CLI
       run: dart pub global activate shorebird
     - name: Authenticate Shorebird
