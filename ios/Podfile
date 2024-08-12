@@ -25,14 +25,12 @@ end
 
 flutter_application_path = File.join(flutter_root, '..')
 
-load File.join(flutter_application_path, '.ios', 'Flutter', 'podhelper.rb')
-
-target 'Runner' do
-  use_frameworks!
-  use_modular_headers!
-
-  flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+if File.exist?(File.join(flutter_application_path, '.ios', 'Flutter', 'podhelper.rb'))
+  load File.join(flutter_application_path, '.ios', 'Flutter', 'podhelper.rb')
+else
+  puts "Skipping Flutter setup as podhelper.rb is missing."
 end
+
 
 post_install do |installer|
   installer.pods_project.targets.each do |target|
