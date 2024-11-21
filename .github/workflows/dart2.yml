@@ -15,38 +15,25 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v3
 
-      # Passo 2: Instalar o Flutter (com versão estável mais recente)
+      # Passo 2: Instalar o Flutter (versão específica)
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.22.2'
 
-      # Passo 3: Verificar versão do Dart
-      - name: Verify Dart version
+      # Passo 3: Verificar versão do Dart e Flutter
+      - name: Verify Dart and Flutter version
         run: flutter --version
 
       # Passo 4: Instalar dependências do Flutter
       - name: Install dependencies
         run: flutter pub get
 
-      # Passo 5: Instalar o Shorebird CLI
-      - name: Install Shorebird CLI
-        run: |
-          curl -fsSL https://raw.githubusercontent.com/shorebirdtech/shorebird/main/install.sh | bash
-          export PATH="$PATH:$HOME/.shorebird/bin"
-      
-      - name: Verify Shorebird CLI installation
-        run: shorebird --version
-
-      # Passo 6: Login no Shorebird
-      - name: Shorebird Login
-        run: shorebird login
-
-      # Passo 7: Construir o app Flutter Web
+      # Passo 5: Construir o app Flutter Web
       - name: Build Flutter Web
         run: flutter build web
 
-      # Passo 8: Fazer o deploy para o Firebase Hosting
+      # Passo 6: Fazer o deploy para o Firebase Hosting
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
