@@ -47,5 +47,4 @@ final List<Descartavel> descartaveis = [
   Descartavel(name: 'BOBINA MÁQUINA CARTÃO', type: 'numeric'),
   Descartavel(name: 'PANOS CHITA TECIDO', type: 'numeric'),
   Descartavel(name: 'EXPOSITOR DE CASQUINHAS', type: 'numeric'),
-  Descartavel(name: 'POTE DE MANTEIGA', type: 'fractional'),
 ];

@@ -33,12 +33,13 @@ const Map<String, List<String>> sabores = {
     'Cajá (Vegano)',
     'Açaí da Amazônia (Vegano)',
     'Groselha (Vegano)',
+    'Seriguela',
+    'Tamarindo',
   ],
   'Massas': [
     'Baunilha',
     'Chocolate',
-    'Carvão',
-    'Canela',
+    'Manteiga',
   ],
   'Especiais': [
     'Baunilha com Mirtilo',

@@ -23,7 +23,7 @@ class _UserSaborTileState extends State<UserSaborTile> {
     final tabViewState = Provider.of<UserSaborStore>(context, listen: false);
     
     // Determina as opções com base na categoria
-    if (widget.categoria == 'Massas') {
+    if (widget.categoria == 'Massas' && widget.sabor != 'Manteiga') {
       opcoes = ['0', '1', '2', '3', '4'];
     } else {
       opcoes = ['0', '1/4', '2/4', '3/4', '4/4'];

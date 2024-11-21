@@ -137,7 +137,11 @@ class UserComandaCard extends StatelessWidget {
         }
 
         final isMassa = categoria.key == 'Massas';
-        final unidade = isMassa ? 'Tubo' : 'Cuba';
+        final isManteiga = saborEntry.key == 'Manteiga';
+        final unidade = isManteiga ? 'Pote' : (isMassa ? 'Tubos' : 'Cubas');
+        final saborNome = isManteiga
+            ? "Manteiga"
+            : (isMassa ? "Massa de ${saborEntry.key}" : saborEntry.key);
 
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
@@ -145,16 +149,18 @@ class UserComandaCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                isMassa ? "Massa de ${saborEntry.key}" : saborEntry.key,
+                saborNome,
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               ...opcoesValidas.map((quantidadeEntry) {
                 return Padding(
                   padding: const EdgeInsets.only(left: 16.0),
                   child: Text(
-                    isMassa
-                        ? "- ${quantidadeEntry.key} $unidade "
-                        : "- ${quantidadeEntry.value} $unidade ${quantidadeEntry.key}",
+                    isManteiga
+                        ? "- ${quantidadeEntry.key} $unidade"
+                        : isMassa
+                            ? "- ${quantidadeEntry.key} $unidade"
+                            : "- ${quantidadeEntry.value} $unidade ${quantidadeEntry.key}",
                   ),
                 );
               }).toList(),
