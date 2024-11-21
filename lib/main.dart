@@ -8,12 +8,17 @@ import 'package:orama_user/stores/user/user_comanda_store.dart';
 import 'package:provider/provider.dart';
 
 void main() async {
-  await initializeDateFormatting('pt_BR', null);
-  WidgetsFlutterBinding.ensureInitialized();
-  await GetStorage.init();
-  await Firebase.initializeApp();
-  runApp(MyApp());
+  try {
+    await initializeDateFormatting('pt_BR', null);
+    WidgetsFlutterBinding.ensureInitialized();
+    await GetStorage.init();
+    await Firebase.initializeApp();
+    runApp(MyApp());
+  } catch (e) {
+    print("Erro na inicialização: $e");
+  }
 }
+
 
 class MyApp extends StatelessWidget {
   @override
