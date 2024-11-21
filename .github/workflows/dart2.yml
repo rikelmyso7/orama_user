@@ -32,8 +32,11 @@ jobs:
       # Passo 5: Instalar o Shorebird CLI
       - name: Install Shorebird CLI
         run: |
-          dart pub global activate shorebird_cli
-          export PATH="$PATH:$HOME/.pub-cache/bin"
+          curl -fsSL https://raw.githubusercontent.com/shorebirdtech/shorebird/main/install.sh | bash
+          export PATH="$PATH:$HOME/.shorebird/bin"
+      
+      - name: Verify Shorebird CLI installation
+        run: shorebird --version
 
       # Passo 6: Login no Shorebird
       - name: Shorebird Login
