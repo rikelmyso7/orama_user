@@ -1,1 +1,37 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"orama-checklist","appId":"1:263340861974:android:02ab19d231698650a3a337","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"orama-checklist","configurations":{"android":"1:263340861974:android:02ab19d231698650a3a337","ios":"1:263340861974:ios:68270b723826c7e9a3a337","web":"1:263340861974:web:c15c1690a64abaf0a3a337"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "orama-checklist",
+          "appId": "1:263340861974:android:02ab19d231698650a3a337",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "orama-checklist",
+          "configurations": {
+            "android": "1:263340861974:android:02ab19d231698650a3a337",
+            "ios": "1:263340861974:ios:68270b723826c7e9a3a337",
+            "web": "1:263340861974:web:c15c1690a64abaf0a3a337"
+          }
+        }
+      }
+    }
+  },
+  "hosting": {
+    "public": "public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}
