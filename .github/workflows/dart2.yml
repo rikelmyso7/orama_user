@@ -1,4 +1,4 @@
-name: Build and Deploy iOS
+name: Deploy to Firebase Hosting on merge
 
 on:
   push:
@@ -6,22 +6,44 @@ on:
       - main
 
 jobs:
-  build:
-    runs-on: macos-latest
+  build_and_deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Flutter
-      uses: subosito/flutter-action@v2
-      with:
-        flutter-version: ''
-    - name: Install Shorebird CLI
-      run: dart pub global activate shorebird
-    - name: Authenticate Shorebird
-      run: shorebird login
-      env:
-        SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }} # Adicione seu token do Shorebird aos secrets do GitHub
-    - name: Build IPA
-      run: shorebird build ios
-    - name: Deploy to Shorebird
-      run: shorebird deploy ios
+      # Passo 1: Baixar o código do repositório
+      - name: Check out repository
+        uses: actions/checkout@v3
+
+      # Passo 2: Instalar o Flutter
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 'stable'
+
+      # Passo 3: Instalar dependências do Flutter
+      - name: Install dependencies
+        run: flutter pub get
+
+      # Passo 4: Instalar o Shorebird CLI
+      - name: Install Shorebird CLI
+        run: |
+          dart pub global activate shorebird_cli
+          export PATH="$PATH:$HOME/.pub-cache/bin"
+
+      # Passo 5: Login no Shorebird
+      - name: Shorebird Login
+        run: shorebird login
+
+      # Passo 6: Construir o app Flutter Web
+      - name: Build Flutter Web
+        run: flutter build web
+
+      # Passo 7: Fazer o deploy para o Firebase Hosting
+      - name: Deploy to Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ORAMA_CHECKLIST }}
+          channelId: live
+          projectId: orama-checklist
