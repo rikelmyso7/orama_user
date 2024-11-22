@@ -38,4 +38,16 @@ class FieldValidators {
     }
     return null;
   }
+
+  static String? validateMoney(String? value) {
+  if (value == null || value.isEmpty) {
+    return 'Informe um valor válido.';
+  }
+  final number = double.tryParse(value);
+  if (number == null) {
+    return 'Digite um valor numérico.';
+  }
+  return null;
+}
+
 }

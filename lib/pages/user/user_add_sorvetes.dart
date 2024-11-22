@@ -15,8 +15,10 @@ class UserAddSorvetes extends StatefulWidget {
 
 class _UserAddSorvetesState extends State<UserAddSorvetes> {
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _caixaInicialController = TextEditingController();
   final formKey = GlobalKey<FormState>();
   final ValueNotifier<bool> isFormValid = ValueNotifier<bool>(false);
+  final TextEditingController _caixaFinalController = TextEditingController();
 
   final List<String> periodo = ["INICIO", "FINAL"];
   String? periodoSelecionado;
@@ -41,12 +43,18 @@ class _UserAddSorvetesState extends State<UserAddSorvetes> {
   void initState() {
     super.initState();
     _nameController.addListener(_validateForm);
+    _caixaInicialController.addListener(_validateForm);
+    _caixaFinalController.addListener(_validateForm);
   }
 
   @override
   void dispose() {
     _nameController.removeListener(_validateForm);
     _nameController.dispose();
+    _caixaInicialController.removeListener(_validateForm);
+    _caixaInicialController.dispose();
+    _caixaFinalController.removeListener(_validateForm);
+    _caixaFinalController.dispose();
     isFormValid.dispose();
     super.dispose();
   }
@@ -54,11 +62,17 @@ class _UserAddSorvetesState extends State<UserAddSorvetes> {
   void _validateForm() {
     isFormValid.value = _nameController.text.isNotEmpty &&
         pdvSelecionado != null &&
-        periodoSelecionado != null;
+        periodoSelecionado != null &&
+        ((periodoSelecionado == "INICIO" &&
+                _caixaInicialController.text.isNotEmpty) ||
+            (periodoSelecionado == "FINAL" &&
+                _caixaFinalController.text.isNotEmpty));
   }
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
       appBar: AppBar(
         iconTheme: const IconThemeData(color: Colors.white),
@@ -79,13 +93,16 @@ class _UserAddSorvetesState extends State<UserAddSorvetes> {
           ),
         ],
       ),
-      body: Center(
-        child: SafeArea(
-          child: Container(
-            height: MediaQuery.of(context).size.height / 2,
+      body: SingleChildScrollView(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight: screenHeight, // Para ocupar no mínimo o tamanho da tela
+          ),
+          child: Center(
             child: Form(
               key: formKey,
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   MyTextField(
                     controller: _nameController,
@@ -126,6 +143,22 @@ class _UserAddSorvetesState extends State<UserAddSorvetes> {
                   SizedBox(
                     height: 15,
                   ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: periodoSelecionado == "INICIO"
+                        ? MyTextField(
+                            controller: _caixaInicialController,
+                            hintText: r'Caixa Inicial R$',
+                            validator: FieldValidators.validateMoney,
+                            keyBordType: TextInputType.number,
+                          )
+                        : MyTextField(
+                            controller: _caixaFinalController,
+                            hintText: r'Caixa Final R$',
+                            validator: FieldValidators.validateMoney,
+                            keyBordType: TextInputType.number,
+                          ),
+                  ),
                   ValueListenableBuilder<bool>(
                     valueListenable: isFormValid,
                     builder: (context, isValid, child) {
@@ -139,9 +172,18 @@ class _UserAddSorvetesState extends State<UserAddSorvetes> {
                                     MaterialPageRoute(
                                       builder: (context) => UserSaboresPage(
                                         pdv: pdvSelecionado ?? '',
-                                        nome: "${_nameController.text} (${periodoSelecionado})",
+                                        nome:
+                                            "${_nameController.text} (${periodoSelecionado})",
                                         data: _date.toString(),
                                         userId: GetStorage().read('userId'),
+                                        caixaInicial:
+                                            periodoSelecionado == "INICIO"
+                                                ? _caixaInicialController.text
+                                                : null,
+                                        caixaFinal:
+                                            periodoSelecionado == "FINAL"
+                                                ? _caixaFinalController.text
+                                                : null,
                                       ),
                                     ),
                                   );

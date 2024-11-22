@@ -243,6 +243,26 @@ mixin _$UserComandaStore on _UserComandaStoreBase, Store {
     });
   }
 
+  late final _$salvarPendenciaOfflineAsyncAction = AsyncAction(
+      '_UserComandaStoreBase.salvarPendenciaOffline',
+      context: context);
+
+  @override
+  Future<void> salvarPendenciaOffline(Comanda2 comanda) {
+    return _$salvarPendenciaOfflineAsyncAction
+        .run(() => super.salvarPendenciaOffline(comanda));
+  }
+
+  late final _$sincronizarPendenciasAsyncAction = AsyncAction(
+      '_UserComandaStoreBase.sincronizarPendencias',
+      context: context);
+
+  @override
+  Future<void> sincronizarPendencias() {
+    return _$sincronizarPendenciasAsyncAction
+        .run(() => super.sincronizarPendencias());
+  }
+
   late final _$addOrUpdateCardAsyncAction =
       AsyncAction('_UserComandaStoreBase.addOrUpdateCard', context: context);
 

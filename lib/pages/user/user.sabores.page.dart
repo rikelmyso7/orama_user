@@ -13,8 +13,17 @@ class UserSaboresPage extends StatefulWidget {
   final String nome;
   final String data;
   final String userId;
+  final String? caixaInicial;
+  final String? caixaFinal;
 
-  UserSaboresPage({required this.pdv, required this.nome, required this.data, required this.userId});
+  UserSaboresPage({
+    required this.pdv,
+    required this.nome,
+    required this.data,
+    required this.userId,
+    this.caixaInicial,
+    this.caixaFinal,
+  });
 
   @override
   _SaboresPageState createState() => _SaboresPageState();
@@ -105,14 +114,16 @@ class _SaboresPageState extends State<UserSaboresPage>
             onPressed: () {
               comandaStore.addOrUpdateCard(
                 Comanda2(
-                    name: widget.nome,
-                    pdv: widget.pdv,
-                    sabores: tabViewState.saboresSelecionados.map(
-                        (key, value) => MapEntry(
-                            key, Map<String, Map<String, int>>.from(value))),
-                    data: DateTime.now(),
-                    id: Uuid().v4(),
-                    userId: GetStorage().read('userId')),
+                  name: widget.nome,
+                  pdv: widget.pdv,
+                  sabores: tabViewState.saboresSelecionados.map((key, value) =>
+                      MapEntry(key, Map<String, Map<String, int>>.from(value))),
+                  data: DateTime.now(),
+                  id: Uuid().v4(),
+                  userId: GetStorage().read('userId'),
+                  caixaInicial: widget.caixaInicial,
+                  caixaFinal: widget.caixaFinal,
+                ),
               );
               Navigator.pushNamed(context, RouteName.user_comandas_page);
             },

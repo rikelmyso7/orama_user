@@ -76,25 +76,41 @@ class UserComandaCard extends StatelessWidget {
   Widget _buildHeader(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(left: 16, right: 16, top: 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '${comanda.pdv}',
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              IconButton(
-                icon: const Icon(Icons.edit),
-                onPressed: () => _editComanda(context),
+              Text(
+                '${comanda.pdv}',
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
-              IconButton(
-                icon: const Icon(Icons.delete),
-                onPressed: () => _deleteComanda(context),
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.edit),
+                    onPressed: () => _editComanda(context),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete),
+                    onPressed: () => _deleteComanda(context),
+                  ),
+                ],
               ),
             ],
           ),
+          if (comanda.caixaInicial != null && comanda.caixaInicial!.isNotEmpty)
+            Text(
+              'Caixa Inicial: R\$ ${comanda.caixaInicial}',
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+            ),
+          if (comanda.caixaFinal != null && comanda.caixaFinal!.isNotEmpty)
+            Text(
+              'Caixa Final: R\$ ${comanda.caixaFinal}',
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+            ),
         ],
       ),
     );

@@ -14,6 +14,8 @@ class Comanda2 {
   String userId;
   Map<String, Map<String, Map<String, int>>> sabores;
   DateTime data;
+  String? caixaInicial;
+  String? caixaFinal;
 
   Comanda2({
     required this.name,
@@ -22,6 +24,8 @@ class Comanda2 {
     required this.userId,
     required this.sabores,
     required this.data,
+    this.caixaInicial,
+    this.caixaFinal,
   });
 
   factory Comanda2.fromJson(Map<String, dynamic> json) {
@@ -45,6 +49,8 @@ class Comanda2 {
       userId: json['userId'] ?? '',
       sabores: saboresConvertidos,
       data: DateTime.parse(json['data'] ?? DateTime.now().toIso8601String()),
+      caixaInicial: json['caixaInicial'],
+      caixaFinal: json['caixaFinal'],
     );
   }
 
@@ -56,6 +62,8 @@ class Comanda2 {
       'userId': userId,
       'sabores': sabores,
       'data': data.toIso8601String(),
+      'caixaInicial': caixaInicial,
+      'caixaFinal': caixaFinal,
     };
   }
 }
@@ -213,6 +221,7 @@ abstract class _UserComandaStoreBase with Store {
 
   _UserComandaStoreBase() {
     _loadComandas();
+    sincronizarPendencias();
   }
 
   @observable
@@ -224,6 +233,33 @@ abstract class _UserComandaStoreBase with Store {
 
   @observable
   DateTime selectedDate = DateTime.now();
+
+  @action
+  Future<void> salvarPendenciaOffline(Comanda2 comanda) async {
+    List<dynamic> pendentes = _storage.read('comandasPendentes') ?? [];
+    pendentes.add(comanda.toJson());
+    await _storage.write('comandasPendentes', pendentes);
+    print('Comanda salva como pendente offline.');
+  }
+
+  @action
+  Future<void> sincronizarPendencias() async {
+    List<dynamic> pendentes = _storage.read('comandasPendentes') ?? [];
+    if (pendentes.isEmpty) return;
+
+    for (var pendenteJson in List.from(pendentes)) {
+      try {
+        final comanda = Comanda2.fromJson(pendenteJson);
+        await addOrUpdateCard(comanda);
+        pendentes.remove(pendenteJson);
+      } catch (e) {
+        print('Erro ao sincronizar comanda pendente: $e');
+      }
+    }
+
+    await _storage.write('comandasPendentes', pendentes);
+    print('Sincronização de pendências concluída.');
+  }
 
   @action
   void removeComandaStorage(int index) {
@@ -260,27 +296,33 @@ abstract class _UserComandaStoreBase with Store {
   //Comandas2 Firebase
   @action
   Future<void> addOrUpdateCard(Comanda2 comanda) async {
-    final userId = GetStorage().read('userId');
-    if (userId == null) {
-      throw Exception('Usuário não está autenticado');
-    }
+    try {
+      final userId = GetStorage().read('userId');
+      if (userId == null) {
+        throw Exception('Usuário não está autenticado');
+      }
 
-    final comandaId = comanda.id ?? Uuid().v4();
-    comanda.id = comandaId;
-    comanda.userId = userId;
+      final comandaId = comanda.id.isEmpty ? Uuid().v4() : comanda.id;
+      comanda.id = comandaId;
+      comanda.userId = userId;
 
-    await _firestore
-        .collection('users')
-        .doc(userId)
-        .collection('comandas')
-        .doc(comandaId)
-        .set(comanda.toJson());
+      await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('comandas')
+          .doc(comandaId)
+          .set(comanda.toJson());
 
-    final existingIndex = comandas.indexWhere((c) => c.id == comandaId);
-    if (existingIndex != -1) {
-      comandas[existingIndex] = comanda;
-    } else {
-      comandas.add(comanda);
+      final existingIndex = comandas.indexWhere((c) => c.id == comandaId);
+      if (existingIndex != -1) {
+        comandas[existingIndex] = comanda;
+      } else {
+        comandas.add(comanda);
+      }
+      print('Comanda enviada para o Firestore com sucesso.');
+    } catch (e) {
+      print('Erro ao enviar comanda para o Firestore. Salvando offline: $e');
+      await salvarPendenciaOffline(comanda);
     }
   }
 
