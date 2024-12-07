@@ -16,6 +16,8 @@ class Comanda2 {
   DateTime data;
   String? caixaInicial;
   String? caixaFinal;
+  String? pixInicial;
+  String? pixFinal;
 
   Comanda2({
     required this.name,
@@ -26,6 +28,8 @@ class Comanda2 {
     required this.data,
     this.caixaInicial,
     this.caixaFinal,
+    this.pixInicial,
+    this.pixFinal,
   });
 
   factory Comanda2.fromJson(Map<String, dynamic> json) {
@@ -51,6 +55,8 @@ class Comanda2 {
       data: DateTime.parse(json['data'] ?? DateTime.now().toIso8601String()),
       caixaInicial: json['caixaInicial'],
       caixaFinal: json['caixaFinal'],
+      pixInicial: json['pixInicial'],
+      pixFinal: json['pixFinal'],
     );
   }
 
@@ -64,6 +70,8 @@ class Comanda2 {
       'data': data.toIso8601String(),
       'caixaInicial': caixaInicial,
       'caixaFinal': caixaFinal,
+      'pixInicial': pixInicial,
+      'pixFinal': pixFinal,
     };
   }
 }

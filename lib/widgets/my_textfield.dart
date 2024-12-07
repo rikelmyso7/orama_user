@@ -54,7 +54,6 @@ class MyTextField extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 5),
           Builder(
             builder: (context) {
               final errorText = (context

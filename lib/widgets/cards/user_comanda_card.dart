@@ -111,6 +111,17 @@ class UserComandaCard extends StatelessWidget {
               'Caixa Final: R\$ ${comanda.caixaFinal}',
               style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
             ),
+          //PIX
+          if (comanda.pixInicial != null && comanda.pixInicial!.isNotEmpty)
+            Text(
+              'Pix Inicial: R\$ ${comanda.pixInicial}',
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+            ),
+          if (comanda.pixFinal != null && comanda.pixFinal!.isNotEmpty)
+            Text(
+              'Pix Final: R\$ ${comanda.pixFinal}',
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+            ),
         ],
       ),
     );

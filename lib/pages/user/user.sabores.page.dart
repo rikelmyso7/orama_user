@@ -15,6 +15,8 @@ class UserSaboresPage extends StatefulWidget {
   final String userId;
   final String? caixaInicial;
   final String? caixaFinal;
+  final String? pixInicial;
+  final String? pixFinal;
 
   UserSaboresPage({
     required this.pdv,
@@ -23,6 +25,8 @@ class UserSaboresPage extends StatefulWidget {
     required this.userId,
     this.caixaInicial,
     this.caixaFinal,
+    this.pixInicial,
+    this.pixFinal,
   });
 
   @override
@@ -123,6 +127,8 @@ class _SaboresPageState extends State<UserSaboresPage>
                   userId: GetStorage().read('userId'),
                   caixaInicial: widget.caixaInicial,
                   caixaFinal: widget.caixaFinal,
+                  pixInicial: widget.pixInicial,
+                  pixFinal: widget.pixFinal,
                 ),
               );
               Navigator.pushNamed(context, RouteName.user_comandas_page);

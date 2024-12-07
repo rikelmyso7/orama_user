@@ -15,10 +15,17 @@ class UserAddSorvetes extends StatefulWidget {
 
 class _UserAddSorvetesState extends State<UserAddSorvetes> {
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _caixaInicialController = TextEditingController();
+  final TextEditingController _caixaInicialDinheiroController =
+      TextEditingController();
+  final TextEditingController _caixaInicialPixController =
+      TextEditingController();
+  final TextEditingController _caixaFinalPixController =
+      TextEditingController();
+  final TextEditingController _caixaFinalDinheiroController =
+      TextEditingController();
+
   final formKey = GlobalKey<FormState>();
   final ValueNotifier<bool> isFormValid = ValueNotifier<bool>(false);
-  final TextEditingController _caixaFinalController = TextEditingController();
 
   final List<String> periodo = ["INICIO", "FINAL"];
   String? periodoSelecionado;
@@ -43,18 +50,19 @@ class _UserAddSorvetesState extends State<UserAddSorvetes> {
   void initState() {
     super.initState();
     _nameController.addListener(_validateForm);
-    _caixaInicialController.addListener(_validateForm);
-    _caixaFinalController.addListener(_validateForm);
+    _caixaInicialDinheiroController.addListener(_validateForm);
+    _caixaFinalDinheiroController.addListener(_validateForm);
+    _caixaInicialPixController.addListener(_validateForm);
+    _caixaFinalPixController.addListener(_validateForm);
   }
 
   @override
   void dispose() {
-    _nameController.removeListener(_validateForm);
     _nameController.dispose();
-    _caixaInicialController.removeListener(_validateForm);
-    _caixaInicialController.dispose();
-    _caixaFinalController.removeListener(_validateForm);
-    _caixaFinalController.dispose();
+    _caixaInicialDinheiroController.dispose();
+    _caixaFinalDinheiroController.dispose();
+    _caixaInicialPixController.dispose();
+    _caixaFinalPixController.dispose();
     isFormValid.dispose();
     super.dispose();
   }
@@ -64,9 +72,11 @@ class _UserAddSorvetesState extends State<UserAddSorvetes> {
         pdvSelecionado != null &&
         periodoSelecionado != null &&
         ((periodoSelecionado == "INICIO" &&
-                _caixaInicialController.text.isNotEmpty) ||
+                _caixaInicialDinheiroController.text.isNotEmpty &&
+                _caixaInicialPixController.text.isNotEmpty) ||
             (periodoSelecionado == "FINAL" &&
-                _caixaFinalController.text.isNotEmpty));
+                _caixaFinalDinheiroController.text.isNotEmpty &&
+                _caixaFinalPixController.text.isNotEmpty));
   }
 
   @override
@@ -82,10 +92,9 @@ class _UserAddSorvetesState extends State<UserAddSorvetes> {
         ),
         elevation: 4,
         backgroundColor: const Color(0xff60C03D),
-        scrolledUnderElevation: 0,
         actions: [
           IconButton(
-            icon: Icon(Icons.logout),
+            icon: const Icon(Icons.logout),
             onPressed: () async {
               await FirebaseAuth.instance.signOut();
               Navigator.of(context).pushReplacementNamed(RouteName.login);
@@ -95,9 +104,7 @@ class _UserAddSorvetesState extends State<UserAddSorvetes> {
       ),
       body: SingleChildScrollView(
         child: ConstrainedBox(
-          constraints: BoxConstraints(
-            minHeight: screenHeight, // Para ocupar no mínimo o tamanho da tela
-          ),
+          constraints: BoxConstraints(minHeight: screenHeight),
           child: Center(
             child: Form(
               key: formKey,
@@ -109,56 +116,61 @@ class _UserAddSorvetesState extends State<UserAddSorvetes> {
                     hintText: 'Seu Nome',
                     validator: FieldValidators.validateName,
                   ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 10),
-                    child: MyDropDownButton(
-                      hint: "Periodo",
-                      options: periodo,
-                      value: periodoSelecionado,
-                      onChanged: (result) {
-                        setState(() {
-                          periodoSelecionado = result;
-                          _validateForm(); // Update validation state
-                        });
-                      },
+                  MyDropDownButton(
+                    hint: "Periodo",
+                    options: periodo,
+                    value: periodoSelecionado,
+                    onChanged: (result) {
+                      setState(() {
+                        periodoSelecionado = result;
+                        _validateForm();
+                      });
+                    },
+                  ),
+                  const SizedBox(
+                    height: 20,
+                  ),
+                  MyDropDownButton(
+                    hint: "Ponto de Venda",
+                    options: pdvs,
+                    value: pdvSelecionado,
+                    onChanged: (result) {
+                      setState(() {
+                        pdvSelecionado = result;
+                        _validateForm();
+                      });
+                    },
+                  ),
+                  const SizedBox(
+                    height: 20,
+                  ),
+                  if (periodoSelecionado == "INICIO") ...[
+                    MyTextField(
+                      controller: _caixaInicialDinheiroController,
+                      hintText: r'Caixa Inicial Dinheiro',
+                      validator: FieldValidators.validateMoney,
+                      keyBordType: TextInputType.number,
                     ),
-                  ),
-                  SizedBox(
-                    height: 15,
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 10),
-                    child: MyDropDownButton(
-                      hint: "Ponto de Venda",
-                      options: pdvs,
-                      value: pdvSelecionado,
-                      onChanged: (result) {
-                        setState(() {
-                          pdvSelecionado = result;
-                          _validateForm(); // Update validation state
-                        });
-                      },
+                    MyTextField(
+                      controller: _caixaInicialPixController,
+                      hintText: r'Caixa Inicial Pix',
+                      validator: FieldValidators.validateMoney,
+                      keyBordType: TextInputType.number,
                     ),
-                  ),
-                  SizedBox(
-                    height: 15,
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 10),
-                    child: periodoSelecionado == "INICIO"
-                        ? MyTextField(
-                            controller: _caixaInicialController,
-                            hintText: r'Caixa Inicial R$',
-                            validator: FieldValidators.validateMoney,
-                            keyBordType: TextInputType.number,
-                          )
-                        : MyTextField(
-                            controller: _caixaFinalController,
-                            hintText: r'Caixa Final R$',
-                            validator: FieldValidators.validateMoney,
-                            keyBordType: TextInputType.number,
-                          ),
-                  ),
+                  ] else if (periodoSelecionado == "FINAL") ...[
+                    MyTextField(
+                      controller: _caixaFinalDinheiroController,
+                      hintText: r'Caixa Final Dinheiro',
+                      validator: FieldValidators.validateMoney,
+                      keyBordType: TextInputType.number,
+                    ),
+                    MyTextField(
+                      controller: _caixaFinalPixController,
+                      hintText: r'Caixa Final Pix',
+                      validator: FieldValidators.validateMoney,
+                      keyBordType: TextInputType.number,
+                    ),
+                  ],
                   ValueListenableBuilder<bool>(
                     valueListenable: isFormValid,
                     builder: (context, isValid, child) {
@@ -176,14 +188,22 @@ class _UserAddSorvetesState extends State<UserAddSorvetes> {
                                             "${_nameController.text} (${periodoSelecionado})",
                                         data: _date.toString(),
                                         userId: GetStorage().read('userId'),
-                                        caixaInicial:
-                                            periodoSelecionado == "INICIO"
-                                                ? _caixaInicialController.text
-                                                : null,
-                                        caixaFinal:
-                                            periodoSelecionado == "FINAL"
-                                                ? _caixaFinalController.text
-                                                : null,
+                                        caixaInicial: periodoSelecionado ==
+                                                "INICIO"
+                                            ? _caixaInicialDinheiroController
+                                                .text
+                                            : null,
+                                        caixaFinal: periodoSelecionado ==
+                                                "FINAL"
+                                            ? _caixaFinalDinheiroController.text
+                                            : null,
+                                        pixInicial: periodoSelecionado ==
+                                                "INICIO"
+                                            ? _caixaInicialPixController.text
+                                            : null,
+                                        pixFinal: periodoSelecionado == "FINAL"
+                                            ? _caixaFinalPixController.text
+                                            : null,
                                       ),
                                     ),
                                   );
