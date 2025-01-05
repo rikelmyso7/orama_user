@@ -11,8 +11,10 @@ final List<Descartavel> descartaveis = [
   Descartavel(name: 'DETERGENTE', type: 'fractional'),
   Descartavel(name: 'ESPONJA', type: 'numeric'),
   Descartavel(name: 'ÁLCOOL EM GEL', type: 'fractional'),
-  Descartavel(name: 'COPO ISOPOR 180ML (EMBALAGENS FECHADAS)', type: 'quantity'),
-  Descartavel(name: 'COPO ISOPOR 120ML (EMBALAGENS FECHADAS)', type: 'quantity'),
+  Descartavel(
+      name: 'COPO ISOPOR 180ML (EMBALAGENS FECHADAS)', type: 'quantity'),
+  Descartavel(
+      name: 'COPO ISOPOR 120ML (EMBALAGENS FECHADAS)', type: 'quantity'),
   Descartavel(name: 'COPO ORAMA 180ML (EMBALAGENS FECHADAS)', type: 'quantity'),
   Descartavel(name: 'GIZ LIQUIDO', type: 'numeric'),
   Descartavel(name: 'ISOPOR VIAGENS', type: 'numeric'),
@@ -21,7 +23,7 @@ final List<Descartavel> descartaveis = [
   Descartavel(name: 'PAPEL FILME', type: 'text'),
   Descartavel(name: 'PÁ DE MADEIRA AMOSTRA', type: 'fractional'),
   Descartavel(name: 'PÁ DE MADEIRA GRANDE', type: 'fractional'),
-  Descartavel(name: 'PERFLEX', type: 'numeric'),
+  Descartavel(name: 'PERFEX', type: 'numeric'),
   Descartavel(name: 'PANOS BRANCOS', type: 'numeric'),
   Descartavel(name: 'BARBANTE', type: 'numeric'),
   Descartavel(name: 'FITA PVC', type: 'numeric'),

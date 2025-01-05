@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:intl/intl.dart';
 import 'package:orama_user/routes/routes.dart';
+import 'package:orama_user/stores/user/descartaveis_store.dart';
 import 'package:orama_user/stores/user/user_comanda_store.dart';
 import 'package:orama_user/utils/exit_dialog_utils.dart';
 import 'package:orama_user/utils/scroll_hide_fab.dart';

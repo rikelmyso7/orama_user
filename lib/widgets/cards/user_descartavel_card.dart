@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:orama_user/others/descartaveis.dart';
 import 'package:orama_user/pages/user/user_descartaveis_edit.dart';
+import 'package:orama_user/stores/user/descartaveis_store.dart';
 import 'package:orama_user/stores/user/user_comanda_store.dart';
 import 'package:orama_user/utils/comanda_utils.dart';
 
@@ -34,7 +35,7 @@ class UserDescartavelCard extends StatelessWidget {
               ],
             ),
             _buildHeader(context),
-            _buildDateRow(),
+            _buildDateRow(context),
             const SizedBox(height: 8.0),
             _buildDescartaveisList(),
           ],
@@ -45,6 +46,22 @@ class UserDescartavelCard extends StatelessWidget {
 
   void _deleteComanda(BuildContext context) {
     ComandaUtils.deleteComandaDescartaveis(context, comanda);
+  }
+
+  void _changeDate(BuildContext context) async {
+    final DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: comanda.data,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+    );
+
+    if (pickedDate != null && pickedDate != comanda.data) {
+      comanda.data = pickedDate;
+      // Salve a nova data usando o método addOrUpdateCard do UserComandaStore
+      final store = DescartaveisStore();
+      store.addOrUpdateDescartavel(comanda);
+    }
   }
 
   void _editComanda(BuildContext context) {
@@ -83,43 +100,93 @@ class UserDescartavelCard extends StatelessWidget {
     );
   }
 
-  Widget _buildDateRow() {
+  Widget _buildDateRow(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Text(DateFormat('dd/MM/yyyy').format(comanda.data)),
+      padding: const EdgeInsets.symmetric(horizontal: 15.0),
+      child: TextButton(
+          onPressed: () => _changeDate(context),
+          child: Text(
+            DateFormat('dd/MM/yyyy').format(comanda.data),
+            style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+          )),
     );
   }
 
   Widget _buildDescartaveisList() {
+    // Verifica se o novo formato (itens) está presente
+    final bool hasNewFormat = comanda.itens.isNotEmpty;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: List.generate(comanda.quantidades.length, (index) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  descartaveis[index].name,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(left: 15),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('- Quantidade ${comanda.quantidades[index]}'),
-                      Text('- Observação: ${comanda.observacoes[index]}'),
-                    ],
-                  ),
-                )
-              ],
-            ),
-          );
-        }),
+        children: hasNewFormat
+            ? _buildNewFormatList() // Novo formato com nome e quantidade
+            : _buildOldFormatList(), // Antigo formato com apenas quantidades
       ),
     );
+  }
+
+  List<Widget> _buildNewFormatList() {
+    return comanda.itens.map((item) {
+      final itemName = item['Item'] ?? 'Item';
+      final quantity = item['Quantidade'] ?? '';
+      final observationIndex = comanda.itens.indexOf(item);
+
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              itemName,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(left: 15),
+              child: Text('- Quantidade: $quantity'),
+            ),
+            if (observationIndex < comanda.observacoes.length)
+              Padding(
+                padding: const EdgeInsets.only(left: 15),
+                child: Text(
+                    '- Observação: ${comanda.observacoes[observationIndex]}'),
+              ),
+          ],
+        ),
+      );
+    }).toList();
+  }
+
+  List<Widget> _buildOldFormatList() {
+    return List.generate(descartaveis.length, (index) {
+      final quantity = index < comanda.observacoes.length
+          ? comanda.observacoes[index]
+          : ''; // Usa "N/A" se a quantidade não for encontrada
+
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              index < descartaveis.length
+                  ? descartaveis[index].name
+                  : 'Item $index',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(left: 15),
+              child: Text('- Quantidade: $quantity'),
+            ),
+            if (index < comanda.observacoes.length)
+              Padding(
+                padding: const EdgeInsets.only(left: 15),
+                child: Text('- Observação: ${comanda.observacoes[index]}'),
+              ),
+          ],
+        ),
+      );
+    });
   }
 }

@@ -211,22 +211,6 @@ mixin _$UserComandaStore on _UserComandaStoreBase, Store {
     });
   }
 
-  late final _$descartaveisComandaAtom =
-      Atom(name: '_UserComandaStoreBase.descartaveisComanda', context: context);
-
-  @override
-  ObservableList<ComandaDescartaveis> get descartaveisComanda {
-    _$descartaveisComandaAtom.reportRead();
-    return super.descartaveisComanda;
-  }
-
-  @override
-  set descartaveisComanda(ObservableList<ComandaDescartaveis> value) {
-    _$descartaveisComandaAtom.reportWrite(value, super.descartaveisComanda, () {
-      super.descartaveisComanda = value;
-    });
-  }
-
   late final _$selectedDateAtom =
       Atom(name: '_UserComandaStoreBase.selectedDate', context: context);
 
@@ -278,16 +262,6 @@ mixin _$UserComandaStore on _UserComandaStoreBase, Store {
   @override
   Future<void> removeComanda(int index) {
     return _$removeComandaAsyncAction.run(() => super.removeComanda(index));
-  }
-
-  late final _$deleteComandaDescartaveisAsyncAction = AsyncAction(
-      '_UserComandaStoreBase.deleteComandaDescartaveis',
-      context: context);
-
-  @override
-  Future<void> deleteComandaDescartaveis(ComandaDescartaveis comanda) {
-    return _$deleteComandaDescartaveisAsyncAction
-        .run(() => super.deleteComandaDescartaveis(comanda));
   }
 
   late final _$loadAllComandasAsyncAction =
@@ -349,7 +323,6 @@ mixin _$UserComandaStore on _UserComandaStoreBase, Store {
   String toString() {
     return '''
 comandas: ${comandas},
-descartaveisComanda: ${descartaveisComanda},
 selectedDate: ${selectedDate}
     ''';
   }

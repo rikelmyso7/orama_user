@@ -76,69 +76,6 @@ class Comanda2 {
   }
 }
 
-//Descartavel.dart
-class ComandaDescartaveis {
-  String name;
-  String id;
-  String pdv;
-  String userId;
-  List<String> quantidades;
-  List<String> observacoes;
-  DateTime data;
-
-  ComandaDescartaveis({
-    required this.name,
-    required this.id,
-    required this.pdv,
-    required this.userId,
-    required this.quantidades,
-    required this.observacoes,
-    required this.data,
-  });
-
-  factory ComandaDescartaveis.fromJson(Map<String, dynamic> json) {
-    return ComandaDescartaveis(
-      name: json['name'] ?? '',
-      id: json['id'] ?? '',
-      pdv: json['pdv'] ?? '',
-      userId: json['userId'] ?? '',
-      quantidades: List<String>.from(json['quantidades'] ?? []),
-      observacoes: List<String>.from(json['observacoes'] ?? []),
-      data: DateTime.parse(json['data'] ?? DateTime.now().toIso8601String()),
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'name': name,
-      'id': id,
-      'pdv': pdv,
-      'userId': userId,
-      'quantidades': quantidades,
-      'observacoes': observacoes,
-      'data': data.toIso8601String(),
-    };
-  }
-
-  Future<void> uploadToFirestore() async {
-    try {
-      final userId = GetStorage()
-          .read('userId'); // Troque para a forma que você obtém o ID do usuário
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userId)
-          .collection('descartaveis')
-          .doc(id)
-          .set(toJson());
-
-      print('Comanda de descartáveis enviada para o Firestore com sucesso.');
-    } catch (e) {
-      print('Erro ao enviar comanda de descartáveis para o Firestore: $e');
-      throw e;
-    }
-  }
-}
-
 //Sabor2.dart
 @JsonSerializable()
 class Sabor2 {
@@ -234,10 +171,6 @@ abstract class _UserComandaStoreBase with Store {
 
   @observable
   ObservableList<Comanda2> comandas = ObservableList<Comanda2>();
-
-  @observable
-  ObservableList<ComandaDescartaveis> descartaveisComanda =
-      ObservableList<ComandaDescartaveis>();
 
   @observable
   DateTime selectedDate = DateTime.now();
@@ -365,29 +298,6 @@ abstract class _UserComandaStoreBase with Store {
       }
     } else {
       print('Usuário não autorizado a deletar esta comanda.');
-    }
-  }
-
-  @action
-  Future<void> deleteComandaDescartaveis(ComandaDescartaveis comanda) async {
-    final userId = GetStorage().read('userId');
-    if (userId == null) {
-      throw Exception('Usuário não está autenticado');
-    }
-
-    try {
-      await _firestore
-          .collection('users')
-          .doc(userId)
-          .collection('descartaveis')
-          .doc(comanda.id)
-          .delete();
-
-      comandas.remove(comanda);
-      print('Comanda deletada com sucesso do Firestore.');
-    } catch (e) {
-      print('Erro ao deletar comanda do Firestore: $e');
-      throw e;
     }
   }
 

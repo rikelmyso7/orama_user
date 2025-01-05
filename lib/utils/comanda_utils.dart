@@ -3,6 +3,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:orama_user/stores/user/descartaveis_store.dart';
 import 'package:orama_user/stores/user/user_comanda_store.dart';
 
 class ComandaUtils {

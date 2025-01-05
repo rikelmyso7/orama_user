@@ -21,6 +21,7 @@
   <meta name="description" content="A new Flutter project.">
 
   <!-- iOS meta tags & icons -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="orama_user">
@@ -31,6 +32,14 @@
 
   <title>orama_user</title>
   <link rel="manifest" href="manifest.json">
+
+  <style>
+    html, body {
+      overflow: auto;
+      -webkit-overflow-scrolling: touch; /* Suporte para rolagem suave no iOS */
+    }
+  </style>
+  
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>
