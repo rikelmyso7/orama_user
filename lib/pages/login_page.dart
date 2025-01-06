@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -106,25 +107,31 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   @override
+  void initState() {
+    super.initState();
+
+    // Configura a cor da barra de status
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+      statusBarColor:
+          const Color(0xff60C03D), // Define a cor da barra de status
+      statusBarIconBrightness: Brightness.light, // Ícones brancos na barra
+    ));
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
-      onPopInvoked: (bool didPop) async {
-        if (didPop) {
-          return;
-        }
+    return WillPopScope(
+      onWillPop: () async {
         final bool shouldPop =
             await DialogUtils.showBackDialog(context) ?? false;
-        if (context.mounted && shouldPop) {
-          Navigator.pop(context);
-        }
+        return shouldPop;
       },
       child: Scaffold(
-        body: SafeArea(
+        body: SizedBox.expand(
           child: Center(
             child: Container(
-              width: MediaQuery.of(context).size.width * 0.9,
-              height: MediaQuery.of(context).size.height * 0.5,
+              width: double.infinity,
+              height: double.infinity,
               decoration: BoxDecoration(
                 color: Color(0xff60C03D),
                 borderRadius: BorderRadius.circular(10),
