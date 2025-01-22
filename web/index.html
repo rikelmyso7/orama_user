@@ -1,27 +1,15 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
+  <!-- Configurações de Base -->
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="A new Flutter project.">
 
-  <!-- iOS meta tags & icons -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <!-- Meta Tags para iOS e Mobile -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="orama_user">
@@ -35,34 +23,51 @@
 
   <style>
     html, body {
-      overflow: auto;
+      height: 100%; /* Garante que o conteúdo ocupe toda a altura */
+      margin: 0;
+      padding: 0;
+      overflow-y: auto; /* Permite rolagem vertical */
       -webkit-overflow-scrolling: touch; /* Suporte para rolagem suave no iOS */
+      overscroll-behavior: none; /* Previne comportamentos inesperados ao rolar */
+      -webkit-text-size-adjust: none; /* Previne ajustes automáticos de texto no iOS */
+    }
+    #flutter_container {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
     }
   </style>
-  
+
 </head>
 <body>
+  <div id="flutter_container"></div>
+
+  <script>
+    // Força configurações de rolagem após o carregamento
+    window.addEventListener('load', () => {
+      document.body.style.overflow = 'auto';
+      document.documentElement.style.overflow = 'auto';
+    });
+  </script>
+
   <script src="flutter_bootstrap.js" async></script>
-  
-<script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
 
-  // Your web app's
-  const firebaseConfig = {
-    apiKey: "AIzaSyCQ2aya5rQSXo0D5yKtOer260WpPCw8A7Y",
-    authDomain: "orama-checklist.firebaseapp.com",
-    projectId: "orama-checklist",
-    storageBucket: "orama-checklist.firebasestorage.app",
-    messagingSenderId: "263340861974",
-    appId: "1:263340861974:android:02ab19d231698650a3a337"
-  };
+  <script type="module">
+    // Importação do Firebase e inicialização
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-</script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCQ2aya5rQSXo0D5yKtOer260WpPCw8A7Y",
+      authDomain: "orama-checklist.firebaseapp.com",
+      projectId: "orama-checklist",
+      storageBucket: "orama-checklist.firebasestorage.app",
+      messagingSenderId: "263340861974",
+      appId: "1:263340861974:android:02ab19d231698650a3a337"
+    };
+
+    // Inicialização do Firebase
+    const app = initializeApp(firebaseConfig);
+  </script>
 
 </body>
 </html>
