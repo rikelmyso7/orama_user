@@ -12,10 +12,8 @@ final List<Descartavel> descartaveis = [
   Descartavel(name: 'ESPONJA', type: 'numeric'),
   Descartavel(name: 'ÁLCOOL EM GEL', type: 'fractional'),
   Descartavel(
-      name: 'COPO ISOPOR 180ML (EMBALAGENS FECHADAS)', type: 'quantity'),
-  Descartavel(
       name: 'COPO ISOPOR 120ML (EMBALAGENS FECHADAS)', type: 'quantity'),
-  Descartavel(name: 'COPO ORAMA 180ML (EMBALAGENS FECHADAS)', type: 'quantity'),
+  Descartavel(name: 'COPO ORAMA 120ML (EMBALAGENS FECHADAS)', type: 'quantity'),
   Descartavel(name: 'GIZ LIQUIDO', type: 'numeric'),
   Descartavel(name: 'ISOPOR VIAGENS', type: 'numeric'),
   Descartavel(name: 'GUARDANAPO (EMBALAGENS FECHADAS)', type: 'quantity'),
