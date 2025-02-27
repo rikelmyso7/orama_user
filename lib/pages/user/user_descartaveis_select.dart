@@ -73,40 +73,47 @@ class _UserDescartaveisSelectState extends State<UserDescartaveisSelect> {
   }
 
   Future<void> _saveData() async {
-    // Verifica se todos os campos obrigatórios foram preenchidos
-    if (quantities.any((quantity) => quantity.isEmpty)) {
+    // Verifica se há pelo menos um item preenchido
+    if (quantities.every((quantity) => quantity.isEmpty)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Por favor, preencha todos os campos obrigatórios.'),
+          content: Text('Por favor, preencha pelo menos um item.'),
           backgroundColor: Colors.red,
         ),
       );
       return;
     }
 
-    // Cria a lista de itens com nome e quantidade
+    // Cria a lista de itens com nome, quantidade e observação
     final List<Map<String, String>> itens = [];
+
     for (int i = 0; i < descartaveis.length; i++) {
-      itens.add({
-        'Item': descartaveis[i].name, // Nome do item
-        'Quantidade': quantities[i], // Quantidade do item
-      });
+      // Verifica se o usuário inseriu alguma quantidade para o item
+      if (quantities[i].isNotEmpty) {
+        itens.add({
+          'Item': descartaveis[i].name, // Nome do item
+          'Quantidade': quantities[i], // Quantidade do item
+          'Observacao': notes[i].isNotEmpty ? notes[i] : '', // Observação
+        });
+      }
     }
 
+    // Gera um ID único para a comanda
     final comandaId = Uuid().v4();
 
+    // Cria o objeto ComandaDescartaveis com os itens e observações associadas
     final ComandaDescartaveis comanda = ComandaDescartaveis(
       name: widget.nome,
       id: comandaId,
       pdv: widget.pdv,
       userId: widget.userId,
-      itens: itens, // Adiciona os itens
-      observacoes: notes,
+      itens: itens, // Agora os itens incluem quantidade e observação
+      observacoes: [], // Removemos a lista separada de observações
       data: DateTime.now(),
     );
 
     try {
-      await comanda.uploadToFirestore(); // Atualize para o método correto
+      await comanda.uploadToFirestore(); // Salva no Firestore
       Navigator.pushReplacementNamed(context, RouteName.user_descartaveis_page);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -167,6 +174,7 @@ class _UserDescartaveisSelectState extends State<UserDescartaveisSelect> {
             return Container(); // Não exibe a opção "Outro" no RadioListTile
           }
           return RadioListTile<String>(
+            activeColor: const Color(0xff60C03D),
             title: Text(option),
             value: option,
             groupValue: quantities[index],
@@ -243,6 +251,7 @@ class _UserDescartaveisSelectState extends State<UserDescartaveisSelect> {
                     const SizedBox(height: 8),
                     _buildQuantitySelector(index),
                     SwitchListTile(
+                      activeColor: const Color(0xff60C03D),
                       title: Text("Adicionar Observações"),
                       value: showNotes[index],
                       onChanged: (value) {
