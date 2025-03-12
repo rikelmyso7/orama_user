@@ -6,6 +6,7 @@ import 'package:orama_user/pages/user/user_sabores_edit_page.dart';
 import 'package:orama_user/stores/user/user_comanda_store.dart';
 import 'package:orama_user/utils/comanda_utils.dart';
 import 'package:orama_user/utils/exit_dialog_utils.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class UserComandaCard extends StatelessWidget {
@@ -17,67 +18,64 @@ class UserComandaCard extends StatelessWidget {
   }) : super(key: key ?? ValueKey(comanda.id));
 
   // Função para compartilhar a comanda ou copiar para a área de transferência
-  void _shareComanda(BuildContext context) async {
-    String message = _generateComandaMessage();
+  Future<void> _shareReport(BuildContext context) async {
+    final reportText = _generateReportText();
+    final encodedText = Uri.encodeComponent(reportText);
+    final Uri whatsappUri = Uri.parse('whatsapp://send?text=$encodedText');
 
-    if (await canLaunchUrl(Uri.parse("https://wa.me/"))) {
-      String encodedMessage = Uri.encodeComponent(message);
-      String whatsappUrl = "https://wa.me/?text=$encodedMessage";
-      await launchUrl(Uri.parse(whatsappUrl),
-          mode: LaunchMode.externalApplication);
+    if (await canLaunchUrl(whatsappUri)) {
+      await launchUrl(whatsappUri);
     } else {
-      // Fallback: Copiar para a área de transferência
-      await Clipboard.setData(ClipboardData(text: message));
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Comanda copiada para a área de transferência!'),
-          duration: Duration(seconds: 2),
-        ),
-      );
+      Share.share(reportText);
     }
   }
 
   // Função para gerar a mensagem da comanda
-  String _generateComandaMessage() {
-    String message = "📝 *Comanda de Sabores*\n";
-    message += "📍 *PDV:* ${comanda.pdv}\n";
-    message += "👤 *Atendente:* ${comanda.name}\n";
-    message +=
-        "📅 *Data:* ${DateFormat('dd/MM/yyyy').format(comanda.data)}\n\n";
+  String _generateReportText() {
+    StringBuffer message = StringBuffer();
+
+    message.writeln("📝 *Comanda de Sabores*");
+    message.writeln("📍 *PDV:* ${comanda.pdv}");
+    message.writeln("👤 *Atendente:* ${comanda.name}");
+    message.writeln(
+        "📅 *Data:* ${DateFormat('dd/MM/yyyy').format(comanda.data)}\n");
 
     if (comanda.caixaInicial != null && comanda.caixaInicial!.isNotEmpty) {
-      message += "💰 *Caixa Inicial:* R\$ ${comanda.caixaInicial}\n";
+      message.writeln("💰 *Caixa Inicial:* R\$ ${comanda.caixaInicial}");
     }
     if (comanda.caixaFinal != null && comanda.caixaFinal!.isNotEmpty) {
-      message += "💰 *Caixa Final:* R\$ ${comanda.caixaFinal}\n";
+      message.writeln("💰 *Caixa Final:* R\$ ${comanda.caixaFinal}");
     }
     if (comanda.pixInicial != null && comanda.pixInicial!.isNotEmpty) {
-      message += "💳 *Pix Inicial:* R\$ ${comanda.pixInicial}\n";
+      message.writeln("💳 *Pix Inicial:* R\$ ${comanda.pixInicial}");
     }
     if (comanda.pixFinal != null && comanda.pixFinal!.isNotEmpty) {
-      message += "💳 *Pix Final:* R\$ ${comanda.pixFinal}\n";
+      message.writeln("💳 *Pix Final:* R\$ ${comanda.pixFinal}");
     }
 
-    message += "\n🍦 *Sabores:*\n";
+    message.writeln("\n🍦 *Sabores:*");
+
     comanda.sabores.forEach((categoria, sabores) {
-      message += "\n📌 *$categoria:*\n";
+      message.writeln("\n📌 *$categoria:*");
+
       sabores.forEach((sabor, opcoes) {
         String saborNome = categoria == 'Massas' ? "Massa de $sabor" : sabor;
-        message += "🔹 $saborNome\n";
+        message.writeln("🔹 *$saborNome*");
 
         opcoes.forEach((opcao, quantidade) {
           if (quantidade > 0) {
             String unidade = (categoria == 'Massas') ? 'Tubos' : 'Cubas';
             if (sabor == 'Manteiga') unidade = 'Pote';
-            message += "   - $quantidade $unidade ($opcao)\n";
+
+            message.writeln("   - $quantidade $unidade ($opcao)");
           }
         });
       });
     });
 
-    message += "\n📌 *Enviado via Orama User App*";
+    message.writeln("\n📌 *Enviado via Orama User App*");
 
-    return message;
+    return message.toString();
   }
 
   @override
@@ -177,7 +175,7 @@ class UserComandaCard extends StatelessWidget {
                     },
                   ),
                   IconButton(
-                    onPressed: () => _shareComanda(context),
+                    onPressed: () => _shareReport(context),
                     icon: const FaIcon(FontAwesomeIcons.whatsapp),
                     tooltip: 'Compartilhar ou Copiar', // Dica para o usuário
                   ),

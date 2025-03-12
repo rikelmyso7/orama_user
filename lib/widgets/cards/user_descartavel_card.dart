@@ -10,6 +10,7 @@ import 'package:orama_user/stores/user/user_comanda_store.dart';
 import 'package:orama_user/utils/comanda_utils.dart';
 import 'package:orama_user/utils/exit_dialog_utils.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class UserDescartavelCard extends StatelessWidget {
@@ -97,30 +98,35 @@ class UserDescartavelCard extends StatelessWidget {
   String _generateReportText() {
     final dateFormatted = DateFormat('dd/MM/yyyy').format(comanda.data);
     StringBuffer report = StringBuffer();
-    report.writeln('Relatório de Descartáveis');
-    report.writeln('Atendente: ${comanda.name}');
-    report.writeln('PDV: ${comanda.pdv}');
-    report.writeln('Data: $dateFormatted');
-    report.writeln('Itens:');
+
+    report.writeln('📋 *Relatório de Descartáveis*');
+    report.writeln('👤 *Atendente:* ${comanda.name}');
+    report.writeln('🏪 *PDV:* ${comanda.pdv}');
+    report.writeln('📅 *Data:* $dateFormatted');
+    report.writeln('\n📦 *Itens:*');
 
     if (comanda.itens.isNotEmpty) {
       for (var item in comanda.itens) {
         final itemName = item['Item'] ?? 'Item';
         final quantity = item['Quantidade'] ?? '';
         final observationIndex = comanda.itens.indexOf(item);
-        report.writeln('  - $itemName');
+
+        report.writeln('  - *$itemName*');
         report.writeln('    Quantidade: $quantity');
+
         if (observationIndex < comanda.observacoes.length) {
-          report.writeln('    Observação: ${comanda.observacoes[observationIndex]}');
+          report.writeln(
+              '    Observação: ${comanda.observacoes[observationIndex]}');
         }
       }
     } else {
       for (int i = 0; i < descartaveis.length; i++) {
-        final quantity = i < comanda.observacoes.length ? comanda.observacoes[i] : '';
-        report.writeln('  - ${descartaveis[i].name}');
-        report.writeln('    Quantidade: $quantity');
+        final quantity =
+            i < comanda.observacoes.length ? comanda.observacoes[i] : '';
+        report.writeln('  - 🛒 *${descartaveis[i].name}*');
+        report.writeln('    🔢 Quantidade: $quantity');
         if (i < comanda.observacoes.length) {
-          report.writeln('    Observação: ${comanda.observacoes[i]}');
+          report.writeln('    📝 Observação: ${comanda.observacoes[i]}');
         }
       }
     }
@@ -129,22 +135,16 @@ class UserDescartavelCard extends StatelessWidget {
   }
 
   // Função para compartilhar o relatório
-  void _shareReport(BuildContext context) async {
-    final reportText = _generateReportText();
 
-    if (await canLaunch('whatsapp://send')) {
-      final whatsappUrl = Uri.parse(
-          'whatsapp://send?text=${Uri.encodeComponent(reportText)}');
-      await launch(whatsappUrl.toString());
+  Future<void> _shareReport(BuildContext context) async {
+    final reportText = _generateReportText();
+    final encodedText = Uri.encodeComponent(reportText);
+    final Uri whatsappUri = Uri.parse('whatsapp://send?text=$encodedText');
+
+    if (await canLaunchUrl(whatsappUri)) {
+      await launchUrl(whatsappUri);
     } else {
-      // Fallback: Copiar para a área de transferência
-      await Clipboard.setData(ClipboardData(text: reportText));
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Relatório copiado para a área de transferência!'),
-          duration: Duration(seconds: 2),
-        ),
-      );
+      Share.share(reportText);
     }
   }
 
@@ -215,9 +215,7 @@ class UserDescartavelCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: hasNewFormat
-            ? _buildNewFormatList()
-            : _buildOldFormatList(),
+        children: hasNewFormat ? _buildNewFormatList() : _buildOldFormatList(),
       ),
     );
   }
@@ -255,9 +253,8 @@ class UserDescartavelCard extends StatelessWidget {
 
   List<Widget> _buildOldFormatList() {
     return List.generate(descartaveis.length, (index) {
-      final quantity = index < comanda.observacoes.length
-          ? comanda.observacoes[index]
-          : '';
+      final quantity =
+          index < comanda.observacoes.length ? comanda.observacoes[index] : '';
 
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 4.0),
