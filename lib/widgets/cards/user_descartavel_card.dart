@@ -99,10 +99,11 @@ class UserDescartavelCard extends StatelessWidget {
     final dateFormatted = DateFormat('dd/MM/yyyy').format(comanda.data);
     StringBuffer report = StringBuffer();
 
-    report.writeln('📋 *Relatório de Descartáveis*');
-    report.writeln('👤 *Atendente:* ${comanda.name}');
-    report.writeln('🏪 *PDV:* ${comanda.pdv}');
-    report.writeln('📅 *Data:* $dateFormatted');
+    message.writeln("📝 *Comanda de Sabores*");
+    message.writeln("📍 *PDV:* ${comanda.pdv}");
+    message.writeln("👤 *Atendente:* ${comanda.name}");
+    message.writeln(
+        "📅 *Data:* ${DateFormat('dd/MM/yyyy').format(comanda.data)}\n");
     report.writeln('\n📦 *Itens:*');
 
     if (comanda.itens.isNotEmpty) {
