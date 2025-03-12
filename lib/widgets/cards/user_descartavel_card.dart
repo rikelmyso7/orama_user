@@ -96,43 +96,40 @@ class UserDescartavelCard extends StatelessWidget {
 
   // Função para gerar o texto do relatório
   String _generateReportText() {
-    final dateFormatted = DateFormat('dd/MM/yyyy').format(comanda.data);
-    StringBuffer report = StringBuffer();
+  final dateFormatted = DateFormat('dd/MM/yyyy').format(comanda.data);
+  StringBuffer report = StringBuffer();
 
-    message.writeln("📝 *Comanda de Sabores*");
-    message.writeln("📍 *PDV:* ${comanda.pdv}");
-    message.writeln("👤 *Atendente:* ${comanda.name}");
-    message.writeln(
-        "📅 *Data:* ${DateFormat('dd/MM/yyyy').format(comanda.data)}\n");
-    report.writeln('\n📦 *Itens:*');
+  report.writeln("📝 *Comanda de Sabores*"); // Corrigido
+  report.writeln("📍 *PDV:* ${comanda.pdv}");
+  report.writeln("👤 *Atendente:* ${comanda.name}");
+  report.writeln("📅 *Data:* ${dateFormatted}\n");
+  report.writeln('\n📦 *Itens:*');
 
-    if (comanda.itens.isNotEmpty) {
-      for (var item in comanda.itens) {
-        final itemName = item['Item'] ?? 'Item';
-        final quantity = item['Quantidade'] ?? '';
-        final observationIndex = comanda.itens.indexOf(item);
+  if (comanda.itens.isNotEmpty) {
+    for (var item in comanda.itens) {
+      final itemName = item['Item'] ?? 'Item';
+      final quantity = item['Quantidade'] ?? '';
+      final observationIndex = comanda.itens.indexOf(item);
 
-        report.writeln('  - *$itemName*');
-        report.writeln('    Quantidade: $quantity');
+      report.writeln('  - *$itemName*');
+      report.writeln('    Quantidade: $quantity');
 
-        if (observationIndex < comanda.observacoes.length) {
-          report.writeln(
-              '    Observação: ${comanda.observacoes[observationIndex]}');
-        }
-      }
-    } else {
-      for (int i = 0; i < descartaveis.length; i++) {
-        final quantity =
-            i < comanda.observacoes.length ? comanda.observacoes[i] : '';
-        report.writeln('  - 🛒 *${descartaveis[i].name}*');
-        report.writeln('    🔢 Quantidade: $quantity');
-        if (i < comanda.observacoes.length) {
-          report.writeln('    📝 Observação: ${comanda.observacoes[i]}');
-        }
+      if (observationIndex < comanda.observacoes.length) {
+        report.writeln('    Observação: ${comanda.observacoes[observationIndex]}');
       }
     }
+  } else {
+    for (int i = 0; i < descartaveis.length; i++) {
+      final quantity = i < comanda.observacoes.length ? comanda.observacoes[i] : '';
+      report.writeln('  - *${descartaveis[i].name}*');
+      report.writeln('    Quantidade: $quantity');
+      if (i < comanda.observacoes.length) {
+        report.writeln('    📝 Observação: ${comanda.observacoes[i]}');
+      }
+    }
+  }
 
-    return report.toString();
+  return report.toString();
   }
 
   // Função para compartilhar o relatório
