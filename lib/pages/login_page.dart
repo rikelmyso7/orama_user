@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -122,9 +124,18 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        final bool shouldPop =
-            await DialogUtils.showBackDialog(context) ?? false;
-        return shouldPop;
+        final bool? shouldPop = await DialogUtils.showConfirmationDialog(
+          context: context,
+          title: 'Confirmação de Saída',
+          content: 'Você deseja sair do aplicativo?',
+          confirmText: 'Sair',
+          cancelText: 'Não',
+          onConfirm: () {
+            exit(0);
+            
+          },
+        );
+        return shouldPop ?? false;
       },
       child: Scaffold(
         body: SizedBox.expand(

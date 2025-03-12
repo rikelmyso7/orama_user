@@ -69,14 +69,19 @@ class _UserDescartaveisPageState extends State<UserDescartaveisPage>
     return PopScope(
       canPop: false,
       onPopInvoked: (bool didPop) async {
-        if (didPop) {
-          return;
-        }
-        final bool shouldPop =
-            await DialogUtils.showBackDialog(context) ?? false;
-        if (context.mounted && shouldPop) {
-          Navigator.pop(context);
-        }
+        if (didPop) return;
+
+        final bool shouldPop = await DialogUtils.showConfirmationDialog(
+              context: context,
+              title: 'Confirmação de Saída',
+              content: 'Você deseja cancelar?',
+              confirmText: 'Sim',
+              cancelText: 'Não',
+              onConfirm: () {
+                Navigator.pop(context);
+              },
+            ) ??
+            false;
       },
       child: Scaffold(
         bottomNavigationBar: UserBottomNavigationBar(

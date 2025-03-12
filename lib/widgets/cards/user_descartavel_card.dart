@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // Adicionado para Clipboard
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:orama_user/others/descartaveis.dart';
 import 'package:orama_user/pages/user/user_descartaveis_edit.dart';
+import 'package:orama_user/stores/user/connectivity_store.dart';
 import 'package:orama_user/stores/user/descartaveis_store.dart';
 import 'package:orama_user/stores/user/user_comanda_store.dart';
 import 'package:orama_user/utils/comanda_utils.dart';
+import 'package:orama_user/utils/exit_dialog_utils.dart';
+import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class UserDescartavelCard extends StatelessWidget {
   final ComandaDescartaveis comanda;
@@ -14,6 +20,8 @@ class UserDescartavelCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final connectivityStore = Provider.of<ConnectivityStore>(context);
+
     return Padding(
       padding: const EdgeInsets.all(10.0),
       child: Card(
@@ -26,10 +34,23 @@ class UserDescartavelCard extends StatelessWidget {
               children: [
                 Padding(
                   padding: const EdgeInsets.only(top: 10),
-                  child: Text(
-                    'Atendente - ${comanda.name}',
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold),
+                  child: Column(
+                    children: [
+                      Text(
+                        'Atendente - ${comanda.name}',
+                        style: const TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                      if (connectivityStore.isOffline)
+                        const Text(
+                          'Verifique a conexão com a internet...',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.red,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               ],
@@ -58,7 +79,6 @@ class UserDescartavelCard extends StatelessWidget {
 
     if (pickedDate != null && pickedDate != comanda.data) {
       comanda.data = pickedDate;
-      // Salve a nova data usando o método addOrUpdateCard do UserComandaStore
       final store = DescartaveisStore();
       store.addOrUpdateDescartavel(comanda);
     }
@@ -71,6 +91,61 @@ class UserDescartavelCard extends StatelessWidget {
         builder: (context) => UserDescartaveisEdit(comanda: comanda),
       ),
     );
+  }
+
+  // Função para gerar o texto do relatório
+  String _generateReportText() {
+    final dateFormatted = DateFormat('dd/MM/yyyy').format(comanda.data);
+    StringBuffer report = StringBuffer();
+    report.writeln('Relatório de Descartáveis');
+    report.writeln('Atendente: ${comanda.name}');
+    report.writeln('PDV: ${comanda.pdv}');
+    report.writeln('Data: $dateFormatted');
+    report.writeln('Itens:');
+
+    if (comanda.itens.isNotEmpty) {
+      for (var item in comanda.itens) {
+        final itemName = item['Item'] ?? 'Item';
+        final quantity = item['Quantidade'] ?? '';
+        final observationIndex = comanda.itens.indexOf(item);
+        report.writeln('  - $itemName');
+        report.writeln('    Quantidade: $quantity');
+        if (observationIndex < comanda.observacoes.length) {
+          report.writeln('    Observação: ${comanda.observacoes[observationIndex]}');
+        }
+      }
+    } else {
+      for (int i = 0; i < descartaveis.length; i++) {
+        final quantity = i < comanda.observacoes.length ? comanda.observacoes[i] : '';
+        report.writeln('  - ${descartaveis[i].name}');
+        report.writeln('    Quantidade: $quantity');
+        if (i < comanda.observacoes.length) {
+          report.writeln('    Observação: ${comanda.observacoes[i]}');
+        }
+      }
+    }
+
+    return report.toString();
+  }
+
+  // Função para compartilhar o relatório
+  void _shareReport(BuildContext context) async {
+    final reportText = _generateReportText();
+
+    if (await canLaunch('whatsapp://send')) {
+      final whatsappUrl = Uri.parse(
+          'whatsapp://send?text=${Uri.encodeComponent(reportText)}');
+      await launch(whatsappUrl.toString());
+    } else {
+      // Fallback: Copiar para a área de transferência
+      await Clipboard.setData(ClipboardData(text: reportText));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Relatório copiado para a área de transferência!'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   Widget _buildHeader(BuildContext context) {
@@ -90,8 +165,22 @@ class UserDescartavelCard extends StatelessWidget {
                 onPressed: () => _editComanda(context),
               ),
               IconButton(
-                icon: const Icon(Icons.delete),
-                onPressed: () => _deleteComanda(context),
+                icon: const Icon(Icons.delete, color: Colors.red),
+                onPressed: () {
+                  DialogUtils.showConfirmationDialog(
+                    context: context,
+                    title: 'Excluir Item',
+                    content: 'Tem certeza que deseja excluir este Relatório?',
+                    confirmText: 'Excluir',
+                    cancelText: 'Cancelar',
+                    onConfirm: () => _deleteComanda(context),
+                  );
+                },
+              ),
+              IconButton(
+                onPressed: () => _shareReport(context),
+                icon: const FaIcon(FontAwesomeIcons.whatsapp),
+                tooltip: 'Compartilhar ou Copiar', // Dica para o usuário
               ),
             ],
           ),
@@ -102,18 +191,24 @@ class UserDescartavelCard extends StatelessWidget {
 
   Widget _buildDateRow(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 15.0),
-      child: TextButton(
-          onPressed: () => _changeDate(context),
-          child: Text(
-            DateFormat('dd/MM/yyyy').format(comanda.data),
-            style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
-          )),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          TextButton(
+            onPressed: () => _changeDate(context),
+            child: Text(
+              DateFormat('dd/MM/yyyy').format(comanda.data),
+              style: const TextStyle(
+                  color: Colors.green, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildDescartaveisList() {
-    // Verifica se o novo formato (itens) está presente
     final bool hasNewFormat = comanda.itens.isNotEmpty;
 
     return Padding(
@@ -121,8 +216,8 @@ class UserDescartavelCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: hasNewFormat
-            ? _buildNewFormatList() // Novo formato com nome e quantidade
-            : _buildOldFormatList(), // Antigo formato com apenas quantidades
+            ? _buildNewFormatList()
+            : _buildOldFormatList(),
       ),
     );
   }
@@ -162,7 +257,7 @@ class UserDescartavelCard extends StatelessWidget {
     return List.generate(descartaveis.length, (index) {
       final quantity = index < comanda.observacoes.length
           ? comanda.observacoes[index]
-          : ''; // Usa "N/A" se a quantidade não for encontrada
+          : '';
 
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 4.0),
