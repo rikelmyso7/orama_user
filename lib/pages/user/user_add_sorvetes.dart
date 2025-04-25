@@ -39,8 +39,7 @@ class _UserAddSorvetesState extends State<UserAddSorvetes> {
     "Vinhos Micheletto",
     "Da Roça Gastronomia",
     "Bendito Quintal",
-    "Pesqueiro Tambury",
-    "VIBE"
+    "Bar da Cachoeira"
   ];
   String? pdvSelecionado;
 
