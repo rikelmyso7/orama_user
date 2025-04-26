@@ -13,14 +13,14 @@ Aplicativo Flutter desenvolvido para que os atendentes em pontos de venda "pdvs"
   Permite ciar relatórios e salvar localmente, enviando assim que a conexão com a internet seja restaurada.
 
 - **Experiência Multiplataforma**  
-  Foi utilizada a versão App Web do Flutter para que tivesse a disponibilidade de rodar em qualquer dispositivo, pois a maiorias dos usuários tem um aparelho defasado
+  Foi utilizada a versão App Web do Flutter para que tivesse a disponibilidade de rodar em qualquer dispositivo, pois a maiorias dos usuários tem um aparelho defasado.
 
 - **Atualizações Dinâmicas:**  
   Integração com Firebase para atualizações de produtos e conteúdos em tempo real.
 
 ---
 
-## 🚀 Tecnologias Utilizadas
+## Tecnologias Utilizadas
 
 - **Flutter** (aplicativo cross-platform)
 - **Firebase** (Firestore, Auth, Cloud Messaging)
