@@ -1,16 +1,35 @@
-# orama_user
+# Orama User App
 
-A new Flutter project.
+Aplicativo Flutter desenvolvido para que os atendentes em pontos de venda "pdvs", possam enviar relatórios da quantidade de itens, seja sorvete ou descartaveis e uniformes. 
 
-## Getting Started
+---
 
-This project is a starting point for a Flutter application.
+## Funcionalidades Principais
 
-A few resources to get you started if this is your first Flutter project:
+- Estoques de sorvetes e descartáveis**  
+  Visualização de todos os itens, separados por categorias.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+- **Armazenamento Offline**  
+  Permite ciar relatórios e salvar localmente, enviando assim que a conexão com a internet seja restaurada.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- **Experiência Multiplataforma**  
+  Foi utilizada a versão App Web do Flutter para que tivesse a disponibilidade de rodar em qualquer dispositivo, pois a maiorias dos usuários tem um aparelho defasado
+
+- **Atualizações Dinâmicas:**  
+  Integração com Firebase para atualizações de produtos e conteúdos em tempo real.
+
+---
+
+## 🚀 Tecnologias Utilizadas
+
+- **Flutter** (aplicativo cross-platform)
+- **Firebase** (Firestore, Auth, Cloud Messaging)
+- **Dart** (linguagem principal)
+- **Firebase Hosting** (para versão Web)
+- **Get Storage** (para armazenamento local)
+- **Mobx** (gerenciamento de estado)
+- **CI/CD** com GitHub Actions (workflows definidos)
+
+---
+
+### Programa desenvolvido para a Orama Brasil no intuito de descartar relatórios feitos em papeis e facilitar a comunicação entre o pdv e a fabrica, ajudando assim na organização e supervisionamento da equipe.
