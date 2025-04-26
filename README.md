@@ -6,7 +6,7 @@ Aplicativo Flutter desenvolvido para que os atendentes em pontos de venda "pdvs"
 
 ## Funcionalidades Principais
 
-- Estoques de sorvetes e descartáveis**  
+- **Estoques de sorvetes e descartáveis**  
   Visualização de todos os itens, separados por categorias.
 
 - **Armazenamento Offline**  
