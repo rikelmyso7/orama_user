@@ -32,4 +32,4 @@ Aplicativo Flutter desenvolvido para que os atendentes em pontos de venda "pdvs"
 
 ---
 
-### Programa desenvolvido para a Orama Brasil no intuito de descartar relatórios feitos em papeis e facilitar a comunicação entre o pdv e a fabrica, ajudando assim na organização e supervisionamento da equipe.
+### Programa desenvolvido para a Orama Brasil no intuito de descartar relatórios feitos em papeis e facilitar a comunicação entre o PDV e Fábrica, facilitando a organização e supervisionamento da equipe.
