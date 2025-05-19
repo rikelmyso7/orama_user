@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:intl/intl.dart';
 import 'package:orama_user/others/sabores.dart';
 import 'package:orama_user/routes/routes.dart';
 import 'package:orama_user/stores/user/user_comanda_store.dart';
@@ -37,6 +38,7 @@ class _SaboresPageState extends State<UserSaboresPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   late ScrollController _scrollController;
+  final dataFormat = DateFormat('dd-MM-yyyy HH:mm').format(DateTime.now());
 
   @override
   void initState() {
@@ -123,7 +125,7 @@ class _SaboresPageState extends State<UserSaboresPage>
                   sabores: tabViewState.saboresSelecionados.map((key, value) =>
                       MapEntry(key, Map<String, Map<String, int>>.from(value))),
                   data: DateTime.now(),
-                  id: Uuid().v4(),
+                  id: '${widget.nome} - ${dataFormat} - ${widget.pdv}',
                   userId: GetStorage().read('userId'),
                   caixaInicial: widget.caixaInicial,
                   caixaFinal: widget.caixaFinal,

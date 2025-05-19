@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 import 'package:orama_user/stores/user/descartaveis_store.dart';
 import 'package:uuid/uuid.dart';
 import 'package:orama_user/others/descartaveis.dart';
@@ -98,8 +99,8 @@ class _UserDescartaveisSelectState extends State<UserDescartaveisSelect> {
       }
     }
 
-    // Gera um ID único para a comanda
-    final comandaId = Uuid().v4();
+    final dataFormat = DateFormat('dd-MM-yyyy HH:mm').format(DateTime.now());
+    final comandaId = '${widget.nome} - ${dataFormat} - ${widget.pdv}';
 
     // Cria o objeto ComandaDescartaveis com os itens e observações associadas
     final ComandaDescartaveis comanda = ComandaDescartaveis(

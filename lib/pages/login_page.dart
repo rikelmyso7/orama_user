@@ -21,7 +21,7 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _passwordController = TextEditingController();
   final formKey = GlobalKey<FormState>();
 
-  bool obscurePassword = true;
+  bool obscurePassword = false;
   bool isLoading = false;
 
   void _showSnackbar(String message) {
@@ -64,8 +64,8 @@ class _LoginPageState extends State<LoginPage> {
     });
     try {
       final authResult = await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: _emailController.text,
-        password: _passwordController.text,
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
       );
       print('Login realizado com sucesso!');
       final userId = authResult.user!.uid;
@@ -73,7 +73,6 @@ class _LoginPageState extends State<LoginPage> {
         GetStorage().write('userId', userId);
       }
 
-      // Obtém os dados do usuário do Firestore
       final userData = await FirebaseFirestore.instance
           .collection('users')
           .doc(userId)
@@ -81,7 +80,6 @@ class _LoginPageState extends State<LoginPage> {
 
       if (userData.exists) {
         final role = userData['role'];
-        // Redireciona para a página correta com base no papel do usuário
         if (role == 'user') {
           if (mounted) {
             Navigator.of(context)
@@ -112,11 +110,9 @@ class _LoginPageState extends State<LoginPage> {
   void initState() {
     super.initState();
 
-    // Configura a cor da barra de status
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-      statusBarColor:
-          const Color(0xff60C03D), // Define a cor da barra de status
-      statusBarIconBrightness: Brightness.light, // Ícones brancos na barra
+      statusBarColor: const Color(0xff60C03D),
+      statusBarIconBrightness: Brightness.light,
     ));
   }
 
@@ -132,12 +128,12 @@ class _LoginPageState extends State<LoginPage> {
           cancelText: 'Não',
           onConfirm: () {
             exit(0);
-            
           },
         );
         return shouldPop ?? false;
       },
       child: Scaffold(
+        resizeToAvoidBottomInset: true,
         body: SizedBox.expand(
           child: Center(
             child: Container(
@@ -148,10 +144,10 @@ class _LoginPageState extends State<LoginPage> {
                 borderRadius: BorderRadius.circular(10),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.grey.withOpacity(0.5), // Cor da sombra
-                    spreadRadius: 5, // Espalhamento
-                    blurRadius: 12, // Borrão
-                    offset: Offset(0, 3), // Deslocamento (x, y)
+                    color: Colors.grey.withOpacity(0.5),
+                    spreadRadius: 5,
+                    blurRadius: 12,
+                    offset: Offset(0, 3),
                   ),
                 ],
               ),

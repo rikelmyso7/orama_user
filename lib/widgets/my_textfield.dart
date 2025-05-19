@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:orama_user/widgets/my_textstyle.dart';
 
 class MyTextField extends StatelessWidget {
@@ -33,6 +34,9 @@ class MyTextField extends StatelessWidget {
             child: TextFormField(
               controller: controller,
               obscureText: obscureText,
+              inputFormatters: [
+                FilteringTextInputFormatter.deny(RegExp(r"\s")),
+              ],
               validator: validator,
               keyboardType: keyBordType,
               decoration: InputDecoration(
@@ -46,8 +50,8 @@ class MyTextField extends StatelessWidget {
                 ),
                 fillColor: Colors.white,
                 filled: true,
-                labelText: hintText,
-                labelStyle: MyTextStyle.hintTextFieldStyle,
+                hintText: hintText,
+                hintStyle: MyTextStyle.hintTextFieldStyle,
                 prefixIcon: prefixicon,
                 prefixIconColor: Colors.black38,
                 suffixIcon: icon,
