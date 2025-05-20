@@ -64,8 +64,8 @@ class _LoginPageState extends State<LoginPage> {
     });
     try {
       final authResult = await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: _emailController.text,
-        password: _passwordController.text,
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
       );
       print('Login realizado com sucesso!');
       final userId = authResult.user!.uid;
