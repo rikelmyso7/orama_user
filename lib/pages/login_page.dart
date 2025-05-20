@@ -179,12 +179,14 @@ class _LoginPageState extends State<LoginPage> {
                             hintText: 'Email',
                             validator: FieldValidators.validateEmail,
                             prefixicon: Icon(Icons.email),
+                            inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'\s'))],
                           ),
                           MyTextField(
                             controller: _passwordController,
                             hintText: 'Senha',
                             obscureText: obscurePassword,
                             validator: FieldValidators.validatePassword,
+                            inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'\s'))],
                             prefixicon: Icon(Icons.lock),
                             icon: Padding(
                               padding: const EdgeInsets.only(right: 5),
