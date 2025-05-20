@@ -9,7 +9,7 @@ class MyTextField extends StatelessWidget {
   final String? Function(String?)? validator;
   final Widget? icon;
   final Widget? prefixicon;
-  final TextInputType? keyBoardType;
+  final TextInputType? keyBordType;
   final void Function(String)? onChanged;
   final TextInputAction? textInputAction;
   final List<TextInputFormatter>? inputFormatters;
@@ -23,7 +23,7 @@ class MyTextField extends StatelessWidget {
     this.validator,
     this.icon,
     this.prefixicon,
-    this.keyBoardType,
+    this.keyBordType,
     this.onChanged,
     this.textInputAction,
   }) : super(key: key);
@@ -39,7 +39,7 @@ class MyTextField extends StatelessWidget {
           obscureText: obscureText,
           inputFormatters: inputFormatters,
           validator: validator,
-          keyboardType: keyBoardType,
+          keyboardType: keyBordType,
           onChanged: onChanged,
           textInputAction: textInputAction,
           decoration: InputDecoration(
