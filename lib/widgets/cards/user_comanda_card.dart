@@ -6,6 +6,7 @@ import 'package:orama_user/pages/user/user_sabores_edit_page.dart';
 import 'package:orama_user/stores/user/user_comanda_store.dart';
 import 'package:orama_user/utils/comanda_utils.dart';
 import 'package:orama_user/utils/exit_dialog_utils.dart';
+import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -110,6 +111,17 @@ class UserComandaCard extends StatelessWidget {
     );
   }
 
+  Widget _buildStatusIcon() {
+    switch (comanda.status) {
+      case ComandaStatus.pendente:
+        return const Icon(Icons.access_time, size: 22, color: Colors.orange);
+      case ComandaStatus.enviado:
+        return const Icon(Icons.check, size: 22, color: Colors.grey);
+      case ComandaStatus.entregue:
+        return const Icon(Icons.done_all, size: 22, color: Colors.green);
+    }
+  }
+
   void _deleteComanda(BuildContext context) {
     ComandaUtils.deleteComanda(context, comanda);
   }
@@ -175,10 +187,20 @@ class UserComandaCard extends StatelessWidget {
                     },
                   ),
                   IconButton(
-                    onPressed: () => _shareReport(context),
-                    icon: const FaIcon(FontAwesomeIcons.whatsapp),
-                    tooltip: 'Compartilhar ou Copiar', // Dica para o usuário
-                  ),
+                      icon: const FaIcon(FontAwesomeIcons.whatsapp),
+                      tooltip: 'Compartilhar ou Copiar', // Dica para o usuário
+                      onPressed: () async {
+                        final store = Provider.of<UserComandaStore>(context);
+
+                        // Atualiza a comanda local
+                        comanda.status = ComandaStatus.entregue;
+
+                        // Salva no Firebase com o status novo
+                        await store.addOrUpdateCard(comanda);
+
+                        // Envia mensagem
+                        await _shareReport(context);
+                      }),
                 ],
               ),
             ],
@@ -211,13 +233,22 @@ class UserComandaCard extends StatelessWidget {
   Widget _buildDateRow(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 15.0),
-      child: TextButton(
-          onPressed: () => _changeDate(context),
-          child: Text(
-            DateFormat('dd/MM/yyyy').format(comanda.data),
-            style: const TextStyle(
-                color: Colors.green, fontWeight: FontWeight.bold),
-          )),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          TextButton(
+              onPressed: () => _changeDate(context),
+              child: Text(
+                DateFormat('dd/MM/yyyy').format(comanda.data),
+                style: const TextStyle(
+                    color: Colors.green, fontWeight: FontWeight.bold),
+              )),
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: _buildStatusIcon(),
+          ),
+        ],
+      ),
     );
   }
 

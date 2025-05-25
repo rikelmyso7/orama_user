@@ -109,54 +109,80 @@ class ComandaDescartaveis {
   String get currentUserId => GetStorage().read('userId') ?? '';
 
   factory ComandaDescartaveis.fromJson(Map<String, dynamic> json) {
-    // Verifica se o campo `itens` existe
-    final itens = (json['itens'] as List<dynamic>?)
-            ?.map((item) => Map<String, String>.from(item as Map))
-            .toList() ??
-        [];
+  final String name = json['name']?.toString() ?? 'Nome não informado';
+  final String id = json['id']?.toString() ?? '';
+  final String pdv = json['pdv']?.toString() ?? 'PDV não informado';
+  final String userId = json['userId']?.toString() ?? '';
+  final dynamic rawItens = json['itens'];
+  final dynamic rawObs = json['observacoes'];
 
-    // Caso o campo `itens` não exista, tenta carregar o formato antigo
-    if (itens.isEmpty && json.containsKey('quantidades')) {
-      final quantidades = (json['quantidades'] as List<dynamic>)
-          .map((e) => e.toString())
-          .toList();
+  // Converte lista de itens
+  final List<Map<String, String>> itens = (rawItens is List)
+      ? rawItens
+          .whereType<Map>()
+          .map((item) => {
+                'Item': item['Item']?.toString() ?? '',
+                'Quantidade': item['Quantidade']?.toString() ?? '',
+                'Observacao': item['Observacao']?.toString() ?? '',
+              })
+          .toList()
+      : [];
 
-      // Cria itens a partir da lista `descartaveis` (caso disponível)
-      final itensAntigos = List.generate(quantidades.length, (index) {
-        final itemName = descartaveis.length > index
-            ? descartaveis[index].name
-            : 'Item $index';
-        return {'Item': itemName, 'Quantidade': quantidades[index]};
-      });
+  // Se vier no formato antigo com 'quantidades', transforma
+  if (itens.isEmpty && json.containsKey('quantidades')) {
+    final quantidades = (json['quantidades'] as List<dynamic>)
+        .map((e) => e.toString())
+        .toList();
 
-      return ComandaDescartaveis(
-        name: json['name'] ?? '',
-        id: json['id'] ?? '',
-        pdv: json['pdv'] ?? '',
-        userId: json['userId'] ?? '',
-        itens: itensAntigos, // Transforma o antigo em novo
-        observacoes: (json['observacoes'] as List<dynamic>?)
-                ?.map((e) => e as String)
-                .toList() ??
-            [],
-        data: DateTime.tryParse(json['data'] ?? '') ?? DateTime.now(),
-      );
-    }
+    final itensAntigos = List.generate(quantidades.length, (index) {
+      final itemName = descartaveis.length > index
+          ? descartaveis[index].name
+          : 'Item $index';
+      return {
+        'Item': itemName,
+        'Quantidade': quantidades[index],
+        'Observacao': '',
+      };
+    });
 
-    // Se `itens` existe, usa o formato novo
     return ComandaDescartaveis(
-      name: json['name'] ?? '',
-      id: json['id'] ?? '',
-      pdv: json['pdv'] ?? '',
-      userId: json['userId'] ?? '',
-      itens: itens,
-      observacoes: (json['observacoes'] as List<dynamic>?)
-              ?.map((e) => e as String)
-              .toList() ??
-          [],
-      data: DateTime.tryParse(json['data'] ?? '') ?? DateTime.now(),
+      name: name,
+      id: id,
+      pdv: pdv,
+      userId: userId,
+      itens: itensAntigos,
+      observacoes: [],
+      data: DateTime.tryParse(json['data']?.toString() ?? '') ?? DateTime.now(),
     );
   }
+
+  // Observações (separadas, formato novo)
+  final List<String> observacoes = (rawObs is List)
+      ? rawObs.map((e) => e.toString()).toList()
+      : [];
+
+  // Data
+  DateTime data;
+  if (json['data'] is Timestamp) {
+    data = (json['data'] as Timestamp).toDate();
+  } else if (json['data'] is String) {
+    data = DateTime.tryParse(json['data']) ?? DateTime.now();
+  } else {
+    data = DateTime.now();
+  }
+
+  return ComandaDescartaveis(
+    name: name,
+    id: id,
+    pdv: pdv,
+    userId: userId,
+    itens: itens,
+    observacoes: observacoes,
+    data: data,
+  );
+}
+
+  
 
   Map<String, dynamic> toJson() {
     // Salva sempre no formato novo

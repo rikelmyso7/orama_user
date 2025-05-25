@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -14,6 +13,7 @@ import 'package:orama_user/widgets/UserBottomNavigationbar.dart';
 import 'package:orama_user/widgets/cards/user_comanda_card.dart';
 import 'package:orama_user/widgets/date_picker_widget.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_mobx/flutter_mobx.dart';
 
 class UserComandasPage extends StatefulWidget {
   @override
@@ -79,6 +79,7 @@ class _UserComandasPageState extends State<UserComandasPage>
     final userId = GetStorage().read('userId');
     final tabViewState = Provider.of<UserSaborStore>(context);
     final dateFormatted = DateFormat('dd/MM/yyyy').format(_selectedDate);
+    final store = Provider.of<UserComandaStore>(context);
 
     return Scaffold(
       bottomNavigationBar: UserBottomNavigationBar(
@@ -140,41 +141,28 @@ class _UserComandasPageState extends State<UserComandasPage>
             ],
           ),
           Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('users')
-                  .doc(userId)
-                  .collection('comandas')
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
-                }
+            child: Observer(
+              builder: (_) {
+                final firebaseComandas =
+                    store.getComandasForSelectedDay(_selectedDate);
 
-                if (snapshot.hasError) {
-                  return Center(child: Text("Erro ao carregar comandas"));
-                }
+                // 🔸 Recupera as comandas pendentes do GetStorage
+                final List<dynamic> pendentesRaw =
+                    GetStorage().read('comandasPendentes') ?? [];
+                final List<Comanda2> comandasPendentes = pendentesRaw
+                    .map((e) => Comanda2.fromJson(Map<String, dynamic>.from(e)))
+                    .where((c) =>
+                        c.data ==
+                        DateFormat('yyyy-MM-dd').format(_selectedDate))
+                    .toList();
 
-                final comandas = snapshot.data?.docs.map((doc) {
-                      final data = doc.data() as Map<String, dynamic>;
-                      DateTime comandaDate;
-                      if (data['data'] is Timestamp) {
-                        comandaDate = (data['data'] as Timestamp).toDate();
-                      } else if (data['data'] is String) {
-                        comandaDate = DateTime.parse(data['data']);
-                      } else {
-                        throw Exception('Tipo de dado inesperado para data');
-                      }
-                      return Comanda2.fromJson(data)..data = comandaDate;
-                    }).where((comanda) {
-                      final comandaDate = comanda.data;
-                      return comandaDate.year == _selectedDate.year &&
-                          comandaDate.month == _selectedDate.month &&
-                          comandaDate.day == _selectedDate.day;
-                    }).toList() ??
-                    [];
+                // 🔸 Combina as duas listas
+                final todasComandas = [
+                  ...firebaseComandas,
+                  ...comandasPendentes
+                ];
 
-                if (comandas.isEmpty) {
+                if (todasComandas.isEmpty) {
                   return Center(child: Text("Nenhuma comanda disponível."));
                 }
 
@@ -184,20 +172,21 @@ class _UserComandasPageState extends State<UserComandasPage>
                     ListView.builder(
                       controller: _scrollController,
                       itemCount:
-                          filterComandasByPeriodo(comandas, "INICIO").length,
+                          filterComandasByPeriodo(todasComandas, "INICIO")
+                              .length,
                       itemBuilder: (context, index) {
-                        final comanda =
-                            filterComandasByPeriodo(comandas, "INICIO")[index];
+                        final comanda = filterComandasByPeriodo(
+                            todasComandas, "INICIO")[index];
                         return UserComandaCard(comanda: comanda);
                       },
                     ),
                     ListView.builder(
                       controller: _scrollController,
-                      itemCount:
-                          filterComandasByPeriodo(comandas, "FINAL").length,
+                      itemCount: filterComandasByPeriodo(todasComandas, "FINAL")
+                          .length,
                       itemBuilder: (context, index) {
-                        final comanda =
-                            filterComandasByPeriodo(comandas, "FINAL")[index];
+                        final comanda = filterComandasByPeriodo(
+                            todasComandas, "FINAL")[index];
                         return UserComandaCard(comanda: comanda);
                       },
                     ),

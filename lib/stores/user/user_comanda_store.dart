@@ -6,6 +6,12 @@ import 'package:uuid/uuid.dart';
 
 part 'user_comanda_store.g.dart';
 
+enum ComandaStatus {
+  pendente,
+  enviado,
+  entregue,
+}
+
 //Comanda2.dart
 class Comanda2 {
   String name;
@@ -18,6 +24,7 @@ class Comanda2 {
   String? caixaFinal;
   String? pixInicial;
   String? pixFinal;
+  ComandaStatus status;
 
   Comanda2({
     required this.name,
@@ -30,6 +37,7 @@ class Comanda2 {
     this.caixaFinal,
     this.pixInicial,
     this.pixFinal,
+    this.status = ComandaStatus.pendente,
   });
 
   factory Comanda2.fromJson(Map<String, dynamic> json) {
@@ -57,6 +65,10 @@ class Comanda2 {
       caixaFinal: json['caixaFinal'],
       pixInicial: json['pixInicial'],
       pixFinal: json['pixFinal'],
+      status: ComandaStatus.values.firstWhere(
+      (e) => e.name == json['status'],
+      orElse: () => ComandaStatus.pendente,
+    ),
     );
   }
 
@@ -72,6 +84,7 @@ class Comanda2 {
       'caixaFinal': caixaFinal,
       'pixInicial': pixInicial,
       'pixFinal': pixFinal,
+      'status': status.name,
     };
   }
 }
@@ -175,13 +188,19 @@ abstract class _UserComandaStoreBase with Store {
   @observable
   DateTime selectedDate = DateTime.now();
 
+
   @action
-  Future<void> salvarPendenciaOffline(Comanda2 comanda) async {
-    List<dynamic> pendentes = _storage.read('comandasPendentes') ?? [];
-    pendentes.add(comanda.toJson());
-    await _storage.write('comandasPendentes', pendentes);
-    print('Comanda salva como pendente offline.');
-  }
+Future<void> salvarPendenciaOffline(Comanda2 comanda) async {
+  List<dynamic> pendentes = _storage.read('comandasPendentes') ?? [];
+  pendentes.add(comanda.toJson());
+  await _storage.write('comandasPendentes', pendentes);
+
+  comandas.add(comanda);
+
+  await _saveComandas();
+  print('Comanda salva como pendente offline.');
+}
+
 
   @action
   Future<void> sincronizarPendencias() async {
@@ -243,9 +262,11 @@ abstract class _UserComandaStoreBase with Store {
         throw Exception('Usuário não está autenticado');
       }
 
-      final comandaId = comanda.id.isEmpty ? Uuid().v4() : comanda.id;
+      final comandaId = comanda.id;
       comanda.id = comandaId;
       comanda.userId = userId;
+
+      comanda.status = ComandaStatus.entregue;
 
       await _firestore
           .collection('users')

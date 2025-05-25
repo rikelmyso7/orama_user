@@ -68,6 +68,29 @@ class _UserDescartaveisPageState extends State<UserDescartaveisPage>
     }).toList();
   }
 
+  Future<void> limparRelatoriosNulos(String userId) async {
+    final ref = FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('descartaveis');
+
+    final snapshot = await ref.get();
+    for (final doc in snapshot.docs) {
+      final data = doc.data();
+
+      final isInvalido = data['name'] == null ||
+          data['pdv'] == null ||
+          data['userId'] == null ||
+          data['itens'] == null ||
+          data['data'] == null;
+
+      if (isInvalido) {
+        print('Removendo relatório inválido: ${doc.id}');
+        await doc.reference.delete();
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final userId = GetStorage().read('userId');
@@ -95,6 +118,13 @@ class _UserDescartaveisPageState extends State<UserDescartaveisPage>
               Navigator.of(context).pushReplacementNamed(RouteName.login);
             },
           ),
+          // IconButton(
+          //   icon: Icon(Icons.sync),
+          //   onPressed: () async {
+          //     await limparRelatoriosNulos(userId);
+          //     Navigator.of(context).pushReplacementNamed(RouteName.login);
+          //   },
+          // )
         ],
         bottom: TabBar(
           labelColor: Colors.white,
@@ -148,24 +178,44 @@ class _UserDescartaveisPageState extends State<UserDescartaveisPage>
                   return Center(child: Text("Erro ao carregar relatórios"));
                 }
 
-                final comandas = snapshot.data?.docs.map((doc) {
-                      final data = doc.data() as Map<String, dynamic>;
-                      DateTime comandaDate;
-                      if (data['data'] is Timestamp) {
-                        comandaDate = (data['data'] as Timestamp).toDate();
-                      } else if (data['data'] is String) {
-                        comandaDate = DateTime.parse(data['data']);
-                      } else {
-                        throw Exception('Tipo de dado inesperado para data');
-                      }
-                      return ComandaDescartaveis.fromJson(data)
-                        ..data = comandaDate;
-                    }).where((comanda) {
-                      final comandaDate = comanda.data;
-                      return comandaDate.year == _selectedDate.year &&
-                          comandaDate.month == _selectedDate.month &&
-                          comandaDate.day == _selectedDate.day;
-                    }).toList() ??
+                final comandas = snapshot.data?.docs
+                        .map((doc) {
+                          final data = doc.data() as Map<String, dynamic>;
+
+                          if (data['name'] == null ||
+                              data['pdv'] == null ||
+                              data['userId'] == null ||
+                              data['itens'] == null ||
+                              data['data'] == null) {
+                            return null;
+                          }
+
+                          try {
+                            DateTime comandaDate;
+                            if (data['data'] is Timestamp) {
+                              comandaDate =
+                                  (data['data'] as Timestamp).toDate();
+                            } else if (data['data'] is String) {
+                              comandaDate = DateTime.parse(data['data']);
+                            } else {
+                              return null;
+                            }
+
+                            return ComandaDescartaveis.fromJson(data)
+                              ..data = comandaDate;
+                          } catch (e) {
+                            return null;
+                          }
+                        })
+                        .where((comanda) {
+                          if (comanda == null) return false;
+                          final comandaDate = comanda.data;
+                          return comandaDate.year == _selectedDate.year &&
+                              comandaDate.month == _selectedDate.month &&
+                              comandaDate.day == _selectedDate.day;
+                        })
+                        .cast<ComandaDescartaveis>()
+                        .toList() ??
                     [];
 
                 if (comandas.isEmpty) {

@@ -93,8 +93,8 @@ class _UserDescartaveisSelectState extends State<UserDescartaveisSelect> {
       if (quantities[i].isNotEmpty) {
         itens.add({
           'Item': descartaveis[i].name, // Nome do item
-          'Quantidade': quantities[i], // Quantidade do item
-          'Observacao': notes[i].isNotEmpty ? notes[i] : '', // Observação
+          'Quantidade': quantities[i].trim().isNotEmpty ? quantities[i].trim() : '0',
+          'Observacao': notes[i].isNotEmpty ? notes[i] : '',
         });
       }
     }
