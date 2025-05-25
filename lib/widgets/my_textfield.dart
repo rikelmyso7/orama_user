@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:orama_user/widgets/my_textstyle.dart';
+import 'package:flutter/services.dart';
 
 class MyTextField extends StatelessWidget {
   final TextEditingController controller;
@@ -10,16 +11,22 @@ class MyTextField extends StatelessWidget {
   final Widget? icon;
   final Widget? prefixicon;
   final TextInputType? keyBordType;
+  final void Function(String)? onChanged;
+  final TextInputAction? textInputAction;
+  final List<TextInputFormatter>? inputFormatters;
 
   const MyTextField({
     Key? key,
     required this.controller,
     required this.hintText,
+    this.inputFormatters,
     this.obscureText = false,
     this.validator,
     this.icon,
-    this.keyBordType,
     this.prefixicon,
+    this.keyBordType,
+    this.onChanged,
+    this.textInputAction,
   }) : super(key: key);
 
   @override
@@ -34,9 +41,6 @@ class MyTextField extends StatelessWidget {
             child: TextFormField(
               controller: controller,
               obscureText: obscureText,
-              inputFormatters: [
-                FilteringTextInputFormatter.deny(RegExp(r"\s")),
-              ],
               validator: validator,
               keyboardType: keyBordType,
               decoration: InputDecoration(
@@ -50,8 +54,8 @@ class MyTextField extends StatelessWidget {
                 ),
                 fillColor: Colors.white,
                 filled: true,
-                hintText: hintText,
-                hintStyle: MyTextStyle.hintTextFieldStyle,
+                labelText: hintText,
+                labelStyle: MyTextStyle.hintTextFieldStyle,
                 prefixIcon: prefixicon,
                 prefixIconColor: Colors.black38,
                 suffixIcon: icon,
