@@ -57,6 +57,7 @@ const Map<String, List<String>> sabores = {
     'Coco Verde Zero Açúcar',
     'Canjica com Canela',
     'Coco com Abobora',
-    'Abacaxi ao Vinho'
+    'Abacaxi ao Vinho',
+    'Vinho Quente',
   ],
 };
