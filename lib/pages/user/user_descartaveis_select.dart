@@ -74,10 +74,26 @@ class _UserDescartaveisSelectState extends State<UserDescartaveisSelect> {
   }
 
   Future<void> _saveData() async {
-    // Verifica se há pelo menos um item preenchido
-    if (quantities.every((quantity) => quantity.isEmpty)) {
+    final List<Map<String, String>> itens = [];
+
+    for (int i = 0; i < descartaveis.length; i++) {
+      final quantidade = quantities[i].trim();
+      final observacao = notes[i].trim();
+
+      // Apenas adiciona se a quantidade foi preenchida
+      if (quantidade.isNotEmpty) {
+        itens.add({
+          'Item': descartaveis[i].name ?? 'Desconhecido',
+          'Quantidade': quantidade,
+          'Observacao': observacao,
+        });
+      }
+    }
+
+    // Verifica se nenhum item foi preenchido
+    if (itens.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text('Por favor, preencha pelo menos um item.'),
           backgroundColor: Colors.red,
         ),
@@ -85,36 +101,21 @@ class _UserDescartaveisSelectState extends State<UserDescartaveisSelect> {
       return;
     }
 
-    // Cria a lista de itens com nome, quantidade e observação
-    final List<Map<String, String>> itens = [];
-
-    for (int i = 0; i < descartaveis.length; i++) {
-      // Verifica se o usuário inseriu alguma quantidade para o item
-      if (quantities[i].isNotEmpty) {
-        itens.add({
-          'Item': descartaveis[i].name, // Nome do item
-          'Quantidade': quantities[i].trim().isNotEmpty ? quantities[i].trim() : '0',
-          'Observacao': notes[i].isNotEmpty ? notes[i] : '',
-        });
-      }
-    }
-
     final dataFormat = DateFormat('dd-MM-yyyy HH:mm').format(DateTime.now());
-    final comandaId = '${widget.nome} - ${dataFormat} - ${widget.pdv}';
+    final comandaId = '${widget.nome} - $dataFormat - ${widget.pdv}';
 
-    // Cria o objeto ComandaDescartaveis com os itens e observações associadas
-    final ComandaDescartaveis comanda = ComandaDescartaveis(
+    final comanda = ComandaDescartaveis(
       name: widget.nome,
       id: comandaId,
       pdv: widget.pdv,
       userId: widget.userId,
-      itens: itens, // Agora os itens incluem quantidade e observação
-      observacoes: [], // Removemos a lista separada de observações
+      itens: itens,
+      observacoes: [], // campo não usado mais
       data: DateTime.now(),
     );
 
     try {
-      await comanda.uploadToFirestore(); // Salva no Firestore
+      await comanda.uploadToFirestore();
       Navigator.pushReplacementNamed(context, RouteName.user_descartaveis_page);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
