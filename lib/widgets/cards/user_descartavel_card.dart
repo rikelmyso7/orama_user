@@ -179,6 +179,7 @@ class UserDescartavelCard extends StatelessWidget {
           Text(
             '${comanda.pdv}',
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          overflow: TextOverflow.ellipsis,
           ),
           Row(
             children: [

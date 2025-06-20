@@ -105,6 +105,7 @@ class UserComandaCard extends StatelessWidget {
                         'Atendente - ${comanda.name} | ${comanda.periodo}',
                         style: const TextStyle(
                             fontSize: 16, fontWeight: FontWeight.bold),
+                            overflow: TextOverflow.ellipsis,
                       ),
                       if (connectivityStore.isOffline)
                         const Text(

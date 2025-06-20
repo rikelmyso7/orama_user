@@ -48,6 +48,7 @@ abstract class _UserComandaStoreBase with Store {
       _filterComandasByDate(selectedDate);
 
   Future<void> _init() async {
+    print('[DEBUG] userId = ${_storage.read<String>('userId')}');
     await _loadPendingComandasFromCache();
     await _loadComandasFromCache();
     if (await _hasConnection()) {
@@ -150,16 +151,23 @@ abstract class _UserComandaStoreBase with Store {
     final end = start.add(const Duration(days: 1));
 
     try {
+      final startIso = DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS")
+          .format(DateTime(date.year, date.month, date.day)); // 00:00 local
+      final endIso = DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS")
+          .format(DateTime(date.year, date.month, date.day, 23, 59, 59, 999));
+
       isLoading = true;
       final snap = await _firestore
           .collection('users')
           .doc(userId)
           .collection('comandas')
-          .where('data', isGreaterThanOrEqualTo: Timestamp.fromDate(start))
-          .where('data', isLessThan: Timestamp.fromDate(end))
+          .where('data', isGreaterThanOrEqualTo: startIso)
+          .where('data', isLessThan: endIso)
           .get();
 
       for (final d in snap.docs) {
+        print('[DEBUG] Query range: $start -> $end');
+        print('[DEBUG] Docs recebidos: ${snap.docs.length}');
         final c = Comanda2.fromDoc(d)..status = ComandaStatus.entregue;
         _upsertComanda(c);
       }
