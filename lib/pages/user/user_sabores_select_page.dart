@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:intl/intl.dart';
+import 'package:orama_user/models/comanda_model.dart';
 import 'package:orama_user/others/sabores.dart';
 import 'package:orama_user/routes/routes.dart';
 import 'package:orama_user/stores/user/user_comanda_store.dart';
+import 'package:orama_user/stores/user_sabor_store.dart';
+import 'package:orama_user/utils/loading_dialog_utils.dart';
 import 'package:orama_user/utils/scroll_hide_fab.dart';
 import 'package:orama_user/widgets/sabor_tile_user.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
-class UserSaboresPage extends StatefulWidget {
+class UserSaboresSelectPage extends StatefulWidget {
   final String pdv;
+  final String? periodo;
   final String nome;
   final String data;
   final String userId;
@@ -19,7 +23,7 @@ class UserSaboresPage extends StatefulWidget {
   final String? pixInicial;
   final String? pixFinal;
 
-  UserSaboresPage({
+  UserSaboresSelectPage({
     required this.pdv,
     required this.nome,
     required this.data,
@@ -28,13 +32,14 @@ class UserSaboresPage extends StatefulWidget {
     this.caixaFinal,
     this.pixInicial,
     this.pixFinal,
+    required this.periodo,
   });
 
   @override
-  _SaboresPageState createState() => _SaboresPageState();
+  _SaboresSelectPageState createState() => _SaboresSelectPageState();
 }
 
-class _SaboresPageState extends State<UserSaboresPage>
+class _SaboresSelectPageState extends State<UserSaboresSelectPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   late ScrollController _scrollController;
@@ -118,6 +123,13 @@ class _SaboresPageState extends State<UserSaboresPage>
               color: Colors.white,
             ),
             onPressed: () {
+              if (tabViewState.saboresSelecionados.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content: Text('Selecione pelo menos um sabor.')),
+                );
+                return;
+              }
               comandaStore.addOrUpdateCard(
                 Comanda2(
                   name: widget.nome,
@@ -131,9 +143,30 @@ class _SaboresPageState extends State<UserSaboresPage>
                   caixaFinal: widget.caixaFinal,
                   pixInicial: widget.pixInicial,
                   pixFinal: widget.pixFinal,
+                  periodo: widget.periodo,
                 ),
               );
-              Navigator.pushNamed(context, RouteName.user_comandas_page);
+              LoadingDialog.show(context);
+              try {
+                if (!mounted) return;
+                tabViewState.resetExpansionState();
+                tabViewState.resetSaborTabView();
+                Navigator.of(context).pop();
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  RouteName.user_comandas_page,
+                  (route) => false,
+                );
+              } catch (e) {
+                
+
+                Navigator.of(context).pop(); // Fecha o dialog
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                      content: Text('Erro ao salvar: $e'),
+                      backgroundColor: Colors.red),
+                );
+              }
             },
           ),
         ),

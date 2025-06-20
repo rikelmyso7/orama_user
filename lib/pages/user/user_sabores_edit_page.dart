@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:orama_user/models/comanda_model.dart';
 import 'package:orama_user/others/sabores.dart';
 import 'package:orama_user/routes/routes.dart';
 import 'package:orama_user/stores/user/user_comanda_store.dart';
+import 'package:orama_user/stores/user_sabor_store.dart';
+import 'package:orama_user/utils/loading_dialog_utils.dart';
 import 'package:orama_user/utils/scroll_hide_fab.dart';
 import 'package:orama_user/widgets/sabor_tile_user.dart';
 import 'package:provider/provider.dart';
@@ -37,6 +40,11 @@ class _UserSaboresEditPageState extends State<UserSaboresEditPage>
         ObservableMap<String, ObservableMap<String, Map<String, int>>>.of(
             widget.comanda.sabores.map((key, value) => MapEntry(
                 key, ObservableMap<String, Map<String, int>>.of(value))));
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final store = context.read<UserComandaStore>();
+      store.syncPendingComandas(); // envia comandos pendentes, se houver
+    });
   }
 
   @override
@@ -105,16 +113,30 @@ class _UserSaboresEditPageState extends State<UserSaboresEditPage>
                     Map<String, Map<String, int>>.from(value.map(
                         (saborKey, saborValue) => MapEntry(
                             saborKey, Map<String, int>.from(saborValue))))));
-
+            LoadingDialog.show(context);
             // Salvar comanda atualizada
-            comandaStore.addOrUpdateCard(widget.comanda);
+            try {
+              comandaStore.addOrUpdateCard(widget.comanda);
+              if (!mounted) return;
+              Navigator.of(context).pop();
+              // Resetar o estado do UserSaborStore
+              tabViewState.resetExpansionState();
+              tabViewState.resetSaborTabView();
 
-            // Resetar o estado do UserSaborStore
-            tabViewState.resetExpansionState();
-            tabViewState.resetSaborTabView();
-
-            // Navegar de volta para user_comandas_page
-            Navigator.pushReplacementNamed(context, RouteName.user_comandas_page);
+              // Navegar de volta para user_comandas_page
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                RouteName.user_comandas_page,
+                (route) => false,
+              );
+            } catch (e) {
+              Navigator.of(context).pop(); // Fecha o dialog
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                    content: Text('Erro ao salvar: $e'),
+                    backgroundColor: Colors.red),
+              );
+            }
           },
         ),
       ),

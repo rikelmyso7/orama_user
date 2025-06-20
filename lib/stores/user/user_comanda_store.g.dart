@@ -3,198 +3,21 @@
 part of 'user_comanda_store.dart';
 
 // **************************************************************************
-// JsonSerializableGenerator
-// **************************************************************************
-
-Sabor2 _$Sabor2FromJson(Map<String, dynamic> json) => Sabor2(
-      nome: json['nome'] as String,
-      categoria: json['categoria'] as String,
-      quantidade: (json['quantidade'] as num).toInt(),
-    );
-
-Map<String, dynamic> _$Sabor2ToJson(Sabor2 instance) => <String, dynamic>{
-      'nome': instance.nome,
-      'categoria': instance.categoria,
-      'quantidade': instance.quantidade,
-    };
-
-// **************************************************************************
 // StoreGenerator
 // **************************************************************************
 
 // ignore_for_file: non_constant_identifier_names, unnecessary_brace_in_string_interps, unnecessary_lambdas, prefer_expression_function_bodies, lines_longer_than_80_chars, avoid_as, avoid_annotating_with_dynamic, no_leading_underscores_for_local_identifiers
 
-mixin _$UserSaborStore on _UserSaborStore, Store {
-  late final _$saboresAtom =
-      Atom(name: '_UserSaborStore.sabores', context: context);
-
-  @override
-  ObservableList<Sabor2> get sabores {
-    _$saboresAtom.reportRead();
-    return super.sabores;
-  }
-
-  @override
-  set sabores(ObservableList<Sabor2> value) {
-    _$saboresAtom.reportWrite(value, super.sabores, () {
-      super.sabores = value;
-    });
-  }
-
-  late final _$currentIndexAtom =
-      Atom(name: '_UserSaborStore.currentIndex', context: context);
-
-  @override
-  int get currentIndex {
-    _$currentIndexAtom.reportRead();
-    return super.currentIndex;
-  }
-
-  @override
-  set currentIndex(int value) {
-    _$currentIndexAtom.reportWrite(value, super.currentIndex, () {
-      super.currentIndex = value;
-    });
-  }
-
-  late final _$saboresSelecionadosAtom =
-      Atom(name: '_UserSaborStore.saboresSelecionados', context: context);
-
-  @override
-  ObservableMap<String, ObservableMap<String, Map<String, int>>>
-      get saboresSelecionados {
-    _$saboresSelecionadosAtom.reportRead();
-    return super.saboresSelecionados;
-  }
-
-  @override
-  set saboresSelecionados(
-      ObservableMap<String, ObservableMap<String, Map<String, int>>> value) {
-    _$saboresSelecionadosAtom.reportWrite(value, super.saboresSelecionados, () {
-      super.saboresSelecionados = value;
-    });
-  }
-
-  late final _$expansionStateAtom =
-      Atom(name: '_UserSaborStore.expansionState', context: context);
-
-  @override
-  ObservableMap<String, ObservableMap<String, bool>> get expansionState {
-    _$expansionStateAtom.reportRead();
-    return super.expansionState;
-  }
-
-  @override
-  set expansionState(ObservableMap<String, ObservableMap<String, bool>> value) {
-    _$expansionStateAtom.reportWrite(value, super.expansionState, () {
-      super.expansionState = value;
-    });
-  }
-
-  late final _$_UserSaborStoreActionController =
-      ActionController(name: '_UserSaborStore', context: context);
-
-  @override
-  void addSabor(Sabor2 sabor) {
-    final _$actionInfo = _$_UserSaborStoreActionController.startAction(
-        name: '_UserSaborStore.addSabor');
-    try {
-      return super.addSabor(sabor);
-    } finally {
-      _$_UserSaborStoreActionController.endAction(_$actionInfo);
-    }
-  }
-
-  @override
-  void removeSabor(Sabor2 sabor) {
-    final _$actionInfo = _$_UserSaborStoreActionController.startAction(
-        name: '_UserSaborStore.removeSabor');
-    try {
-      return super.removeSabor(sabor);
-    } finally {
-      _$_UserSaborStoreActionController.endAction(_$actionInfo);
-    }
-  }
-
-  @override
-  void updateSabor(int index, Sabor2 sabor) {
-    final _$actionInfo = _$_UserSaborStoreActionController.startAction(
-        name: '_UserSaborStore.updateSabor');
-    try {
-      return super.updateSabor(index, sabor);
-    } finally {
-      _$_UserSaborStoreActionController.endAction(_$actionInfo);
-    }
-  }
-
-  @override
-  void setCurrentIndex(int index) {
-    final _$actionInfo = _$_UserSaborStoreActionController.startAction(
-        name: '_UserSaborStore.setCurrentIndex');
-    try {
-      return super.setCurrentIndex(index);
-    } finally {
-      _$_UserSaborStoreActionController.endAction(_$actionInfo);
-    }
-  }
-
-  @override
-  void updateSaborTabView(
-      String categoria, String sabor, Map<String, int> quantidade) {
-    final _$actionInfo = _$_UserSaborStoreActionController.startAction(
-        name: '_UserSaborStore.updateSaborTabView');
-    try {
-      return super.updateSaborTabView(categoria, sabor, quantidade);
-    } finally {
-      _$_UserSaborStoreActionController.endAction(_$actionInfo);
-    }
-  }
-
-  @override
-  void setExpansionState(String categoria, String sabor, bool isExpanded) {
-    final _$actionInfo = _$_UserSaborStoreActionController.startAction(
-        name: '_UserSaborStore.setExpansionState');
-    try {
-      return super.setExpansionState(categoria, sabor, isExpanded);
-    } finally {
-      _$_UserSaborStoreActionController.endAction(_$actionInfo);
-    }
-  }
-
-  @override
-  void resetExpansionState() {
-    final _$actionInfo = _$_UserSaborStoreActionController.startAction(
-        name: '_UserSaborStore.resetExpansionState');
-    try {
-      return super.resetExpansionState();
-    } finally {
-      _$_UserSaborStoreActionController.endAction(_$actionInfo);
-    }
-  }
-
-  @override
-  void resetSaborTabView() {
-    final _$actionInfo = _$_UserSaborStoreActionController.startAction(
-        name: '_UserSaborStore.resetSaborTabView');
-    try {
-      return super.resetSaborTabView();
-    } finally {
-      _$_UserSaborStoreActionController.endAction(_$actionInfo);
-    }
-  }
-
-  @override
-  String toString() {
-    return '''
-sabores: ${sabores},
-currentIndex: ${currentIndex},
-saboresSelecionados: ${saboresSelecionados},
-expansionState: ${expansionState}
-    ''';
-  }
-}
-
 mixin _$UserComandaStore on _UserComandaStoreBase, Store {
+  Computed<List<Comanda2>>? _$comandasForSelectedDateComputed;
+
+  @override
+  List<Comanda2> get comandasForSelectedDate =>
+      (_$comandasForSelectedDateComputed ??= Computed<List<Comanda2>>(
+              () => super.comandasForSelectedDate,
+              name: '_UserComandaStoreBase.comandasForSelectedDate'))
+          .value;
+
   late final _$comandasAtom =
       Atom(name: '_UserComandaStoreBase.comandas', context: context);
 
@@ -208,6 +31,22 @@ mixin _$UserComandaStore on _UserComandaStoreBase, Store {
   set comandas(ObservableList<Comanda2> value) {
     _$comandasAtom.reportWrite(value, super.comandas, () {
       super.comandas = value;
+    });
+  }
+
+  late final _$pendingComandasAtom =
+      Atom(name: '_UserComandaStoreBase.pendingComandas', context: context);
+
+  @override
+  ObservableList<Comanda2> get pendingComandas {
+    _$pendingComandasAtom.reportRead();
+    return super.pendingComandas;
+  }
+
+  @override
+  set pendingComandas(ObservableList<Comanda2> value) {
+    _$pendingComandasAtom.reportWrite(value, super.pendingComandas, () {
+      super.pendingComandas = value;
     });
   }
 
@@ -227,24 +66,28 @@ mixin _$UserComandaStore on _UserComandaStoreBase, Store {
     });
   }
 
-  late final _$salvarPendenciaOfflineAsyncAction = AsyncAction(
-      '_UserComandaStoreBase.salvarPendenciaOffline',
-      context: context);
+  late final _$isLoadingAtom =
+      Atom(name: '_UserComandaStoreBase.isLoading', context: context);
 
   @override
-  Future<void> salvarPendenciaOffline(Comanda2 comanda) {
-    return _$salvarPendenciaOfflineAsyncAction
-        .run(() => super.salvarPendenciaOffline(comanda));
+  bool get isLoading {
+    _$isLoadingAtom.reportRead();
+    return super.isLoading;
   }
 
-  late final _$sincronizarPendenciasAsyncAction = AsyncAction(
-      '_UserComandaStoreBase.sincronizarPendencias',
-      context: context);
+  @override
+  set isLoading(bool value) {
+    _$isLoadingAtom.reportWrite(value, super.isLoading, () {
+      super.isLoading = value;
+    });
+  }
+
+  late final _$deleteComandaAsyncAction =
+      AsyncAction('_UserComandaStoreBase.deleteComanda', context: context);
 
   @override
-  Future<void> sincronizarPendencias() {
-    return _$sincronizarPendenciasAsyncAction
-        .run(() => super.sincronizarPendencias());
+  Future<void> deleteComanda(String comandaId) {
+    return _$deleteComandaAsyncAction.run(() => super.deleteComanda(comandaId));
   }
 
   late final _$addOrUpdateCardAsyncAction =
@@ -256,64 +99,43 @@ mixin _$UserComandaStore on _UserComandaStoreBase, Store {
         .run(() => super.addOrUpdateCard(comanda));
   }
 
-  late final _$removeComandaAsyncAction =
-      AsyncAction('_UserComandaStoreBase.removeComanda', context: context);
+  late final _$syncPendingComandasAsyncAction = AsyncAction(
+      '_UserComandaStoreBase.syncPendingComandas',
+      context: context);
 
   @override
-  Future<void> removeComanda(int index) {
-    return _$removeComandaAsyncAction.run(() => super.removeComanda(index));
+  Future<void> syncPendingComandas() {
+    return _$syncPendingComandasAsyncAction
+        .run(() => super.syncPendingComandas());
   }
 
-  late final _$loadAllComandasAsyncAction =
-      AsyncAction('_UserComandaStoreBase.loadAllComandas', context: context);
+  late final _$setSelectedDateAsyncAction =
+      AsyncAction('_UserComandaStoreBase.setSelectedDate', context: context);
 
   @override
-  Future<void> loadAllComandas() {
-    return _$loadAllComandasAsyncAction.run(() => super.loadAllComandas());
+  Future<void> setSelectedDate(DateTime date) {
+    return _$setSelectedDateAsyncAction.run(() => super.setSelectedDate(date));
+  }
+
+  late final _$_syncPendingComandasAsyncAction = AsyncAction(
+      '_UserComandaStoreBase._syncPendingComandas',
+      context: context);
+
+  @override
+  Future<void> _syncPendingComandas() {
+    return _$_syncPendingComandasAsyncAction
+        .run(() => super._syncPendingComandas());
   }
 
   late final _$_UserComandaStoreBaseActionController =
       ActionController(name: '_UserComandaStoreBase', context: context);
 
   @override
-  void removeComandaStorage(int index) {
+  List<Comanda2> getComandasForSelectedDay2(DateTime date) {
     final _$actionInfo = _$_UserComandaStoreBaseActionController.startAction(
-        name: '_UserComandaStoreBase.removeComandaStorage');
+        name: '_UserComandaStoreBase.getComandasForSelectedDay2');
     try {
-      return super.removeComandaStorage(index);
-    } finally {
-      _$_UserComandaStoreBaseActionController.endAction(_$actionInfo);
-    }
-  }
-
-  @override
-  void addOrUpdateCardStorage(Comanda2 comanda) {
-    final _$actionInfo = _$_UserComandaStoreBaseActionController.startAction(
-        name: '_UserComandaStoreBase.addOrUpdateCardStorage');
-    try {
-      return super.addOrUpdateCardStorage(comanda);
-    } finally {
-      _$_UserComandaStoreBaseActionController.endAction(_$actionInfo);
-    }
-  }
-
-  @override
-  void setSelectedDate(DateTime date) {
-    final _$actionInfo = _$_UserComandaStoreBaseActionController.startAction(
-        name: '_UserComandaStoreBase.setSelectedDate');
-    try {
-      return super.setSelectedDate(date);
-    } finally {
-      _$_UserComandaStoreBaseActionController.endAction(_$actionInfo);
-    }
-  }
-
-  @override
-  List<Comanda2> getComandasForSelectedDay(DateTime date) {
-    final _$actionInfo = _$_UserComandaStoreBaseActionController.startAction(
-        name: '_UserComandaStoreBase.getComandasForSelectedDay');
-    try {
-      return super.getComandasForSelectedDay(date);
+      return super.getComandasForSelectedDay2(date);
     } finally {
       _$_UserComandaStoreBaseActionController.endAction(_$actionInfo);
     }
@@ -323,7 +145,10 @@ mixin _$UserComandaStore on _UserComandaStoreBase, Store {
   String toString() {
     return '''
 comandas: ${comandas},
-selectedDate: ${selectedDate}
+pendingComandas: ${pendingComandas},
+selectedDate: ${selectedDate},
+isLoading: ${isLoading},
+comandasForSelectedDate: ${comandasForSelectedDate}
     ''';
   }
 }

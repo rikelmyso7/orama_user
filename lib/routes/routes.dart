@@ -46,7 +46,7 @@ class Routes {
       return UserDescartaveisSelect(
         pdv: '',
         nome: '',
-        data: '', userId: GetStorage().read('userId'),
+        data: '', userId: GetStorage().read('userId'), periodo: '',
       );
     },
     RouteName.user_comandas_page: (BuildContext context) {

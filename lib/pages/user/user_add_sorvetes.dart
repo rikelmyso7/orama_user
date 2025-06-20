@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:orama_user/others/field_validators.dart';
-import 'package:orama_user/pages/user/user.sabores.page.dart';
+import 'package:orama_user/pages/user/user_sabores_select_page.dart';
 import 'package:orama_user/routes/routes.dart';
 import 'package:orama_user/widgets/my_button.dart';
 import 'package:orama_user/widgets/my_dropdown.dart';
@@ -23,6 +23,7 @@ class _UserAddSorvetesState extends State<UserAddSorvetes> {
       TextEditingController();
   final TextEditingController _caixaFinalDinheiroController =
       TextEditingController();
+  final TextEditingController _customPdvController = TextEditingController();
 
   final formKey = GlobalKey<FormState>();
   final ValueNotifier<bool> isFormValid = ValueNotifier<bool>(false);
@@ -39,7 +40,8 @@ class _UserAddSorvetesState extends State<UserAddSorvetes> {
     "Vinhos Micheletto",
     "Da Roça Gastronomia",
     "Bendito Quintal",
-    "Bar da Cachoeira"
+    "Bar da Cachoeira",
+    "Outro",
   ];
   String? pdvSelecionado;
 
@@ -53,6 +55,7 @@ class _UserAddSorvetesState extends State<UserAddSorvetes> {
     _caixaFinalDinheiroController.addListener(_validateForm);
     _caixaInicialPixController.addListener(_validateForm);
     _caixaFinalPixController.addListener(_validateForm);
+    _customPdvController.addListener(_validateForm);
   }
 
   @override
@@ -62,20 +65,25 @@ class _UserAddSorvetesState extends State<UserAddSorvetes> {
     _caixaFinalDinheiroController.dispose();
     _caixaInicialPixController.dispose();
     _caixaFinalPixController.dispose();
+    _customPdvController.dispose();
     isFormValid.dispose();
     super.dispose();
   }
 
   void _validateForm() {
-    isFormValid.value = _nameController.text.isNotEmpty &&
-        pdvSelecionado != null &&
-        periodoSelecionado != null &&
-        ((periodoSelecionado == "INICIO" &&
-                _caixaInicialDinheiroController.text.isNotEmpty &&
-                _caixaInicialPixController.text.isNotEmpty) ||
-            (periodoSelecionado == "FINAL" &&
-                _caixaFinalDinheiroController.text.isNotEmpty &&
-                _caixaFinalPixController.text.isNotEmpty));
+    final bool periodoOk = periodoSelecionado != null;
+    final bool pdvOk = pdvSelecionado != null &&
+        (pdvSelecionado != 'Outro' || _customPdvController.text.isNotEmpty);
+
+    final bool caixaOk = (periodoSelecionado == "INICIO" &&
+            _caixaInicialDinheiroController.text.isNotEmpty &&
+            _caixaInicialPixController.text.isNotEmpty) ||
+        (periodoSelecionado == "FINAL" &&
+            _caixaFinalDinheiroController.text.isNotEmpty &&
+            _caixaFinalPixController.text.isNotEmpty);
+
+    isFormValid.value =
+        _nameController.text.isNotEmpty && periodoOk && pdvOk && caixaOk;
   }
 
   @override
@@ -136,6 +144,9 @@ class _UserAddSorvetesState extends State<UserAddSorvetes> {
                     onChanged: (result) {
                       setState(() {
                         pdvSelecionado = result;
+                        if (pdvSelecionado != 'Outro') {
+                          _customPdvController.clear();
+                        }
                         _validateForm();
                       });
                     },
@@ -143,6 +154,19 @@ class _UserAddSorvetesState extends State<UserAddSorvetes> {
                   const SizedBox(
                     height: 20,
                   ),
+                  // Campo extra quando 'Outro' é escolhido
+                  if (pdvSelecionado == 'Outro')
+                    MyTextField(
+                      controller: _customPdvController,
+                      hintText: 'Nome do Ponto de Venda',
+                      validator: (value) {
+                        if (pdvSelecionado == 'Outro' &&
+                            (value ?? '').isEmpty) {
+                          return 'Digite o nome do ponto de venda';
+                        }
+                        return null;
+                      },
+                    ),
                   if (periodoSelecionado == "INICIO") ...[
                     MyTextField(
                       controller: _caixaInicialDinheiroController,
@@ -181,10 +205,13 @@ class _UserAddSorvetesState extends State<UserAddSorvetes> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => UserSaboresPage(
-                                        pdv: pdvSelecionado ?? '',
-                                        nome:
-                                            "${_nameController.text} (${periodoSelecionado})",
+                                      builder: (context) =>
+                                          UserSaboresSelectPage(
+                                        pdv: pdvSelecionado == 'Outro'
+                                            ? _customPdvController.text
+                                            : pdvSelecionado ?? '',
+                                        nome: _nameController.text,
+                                        periodo: periodoSelecionado!,
                                         data: _date.toString(),
                                         userId: GetStorage().read('userId'),
                                         caixaInicial: periodoSelecionado ==

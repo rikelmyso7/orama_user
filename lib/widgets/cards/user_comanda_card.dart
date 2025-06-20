@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // Adicionado para Clipboard
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:orama_user/models/comanda_model.dart';
 import 'package:orama_user/pages/user/user_sabores_edit_page.dart';
+import 'package:orama_user/stores/user/connectivity_store.dart';
 import 'package:orama_user/stores/user/user_comanda_store.dart';
 import 'package:orama_user/utils/comanda_utils.dart';
 import 'package:orama_user/utils/exit_dialog_utils.dart';
+import 'package:orama_user/utils/loading_dialog_utils.dart';
+import 'package:orama_user/utils/show_snackbar.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -81,6 +85,8 @@ class UserComandaCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final connectivityStore = Provider.of<ConnectivityStore>(context);
+
     return Padding(
       padding: const EdgeInsets.all(10.0),
       child: Card(
@@ -93,10 +99,23 @@ class UserComandaCard extends StatelessWidget {
               children: [
                 Padding(
                   padding: const EdgeInsets.only(top: 10),
-                  child: Text(
-                    'Atendente - ${comanda.name}',
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold),
+                  child: Column(
+                    children: [
+                      Text(
+                        'Atendente - ${comanda.name} | ${comanda.periodo}',
+                        style: const TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                      if (connectivityStore.isOffline)
+                        const Text(
+                          'Verifique a conexão com a internet...',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.grey,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               ],
@@ -114,16 +133,24 @@ class UserComandaCard extends StatelessWidget {
   Widget _buildStatusIcon() {
     switch (comanda.status) {
       case ComandaStatus.pendente:
-        return const Icon(Icons.access_time, size: 22, color: Colors.orange);
-      case ComandaStatus.enviado:
-        return const Icon(Icons.check, size: 22, color: Colors.grey);
+        return Column(
+          children: [
+            const Icon(Icons.check, size: 22, color: Colors.grey),
+            Text(
+              "Enviado\nAguardando Internet",
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey),
+            ),
+          ],
+        );
       case ComandaStatus.entregue:
         return const Icon(Icons.done_all, size: 22, color: Colors.green);
     }
   }
 
   void _deleteComanda(BuildContext context) {
-    ComandaUtils.deleteComanda(context, comanda);
+    context.read<UserComandaStore>().deleteComanda(comanda.id);
+    ShowSnackBar(context, 'Comanda deletada com sucesso', Colors.green);
   }
 
   void _editComanda(BuildContext context) {
@@ -143,11 +170,12 @@ class UserComandaCard extends StatelessWidget {
       lastDate: DateTime(2101),
     );
 
-    if (pickedDate != null && pickedDate != comanda.data) {
-      comanda.data = pickedDate;
-      final store = UserComandaStore();
-      store.addOrUpdateCard(comanda);
-    }
+    if (pickedDate == null || pickedDate == comanda.data) return;
+    final store = context.read<UserComandaStore>();
+    await store.deleteComanda(comanda.id);
+    comanda.data = pickedDate;
+    await store.addOrUpdateCard(comanda);
+    
   }
 
   Widget _buildHeader(BuildContext context) {
@@ -171,7 +199,10 @@ class UserComandaCard extends StatelessWidget {
                     onPressed: () => _editComanda(context),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.delete),
+                    icon: const Icon(
+                      Icons.delete,
+                      color: Colors.red,
+                    ),
                     onPressed: () {
                       DialogUtils.showConfirmationDialog(
                         context: context,
@@ -253,8 +284,6 @@ class UserComandaCard extends StatelessWidget {
   }
 
   List<Widget> _buildSaborList() {
-    print("Comanda sabores: ${comanda.sabores}");
-
     if (comanda.sabores.isEmpty) {
       return [
         Padding(
@@ -266,8 +295,6 @@ class UserComandaCard extends StatelessWidget {
 
     return comanda.sabores.entries.expand((categoria) {
       return categoria.value.entries.map((saborEntry) {
-        print(
-            "Categoria: ${categoria.key}, Sabor: ${saborEntry.key}, Quantidades: ${saborEntry.value}");
         final opcoesValidas = saborEntry.value.entries
             .where((quantidadeEntry) => quantidadeEntry.value > 0)
             .toList();

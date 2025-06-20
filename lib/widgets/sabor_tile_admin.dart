@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:orama_user/stores/admin/comanda_store.dart';
+import 'package:orama_user/stores/user_sabor_store.dart';
 import 'package:provider/provider.dart';
 
 class SaborTile extends StatefulWidget {
@@ -20,7 +20,7 @@ class _SaborTileState extends State<SaborTile> {
   @override
   void initState() {
     super.initState();
-    final tabViewState = Provider.of<SaborStore>(context, listen: false);
+    final tabViewState = Provider.of<UserSaborStore>(context, listen: false);
     quantidadePorOpcao = tabViewState.saboresSelecionados[widget.categoria]?[widget.sabor] ?? {
       '0': 0,
       '1/4': 0,
@@ -35,7 +35,7 @@ class _SaborTileState extends State<SaborTile> {
     setState(() {
       quantidadePorOpcao[opcao] = (quantidadePorOpcao[opcao]! + 1);
     });
-    Provider.of<SaborStore>(context, listen: false).updateSaborTabView(widget.categoria, widget.sabor, quantidadePorOpcao);
+    Provider.of<UserSaborStore>(context, listen: false).updateSaborTabView(widget.categoria, widget.sabor, quantidadePorOpcao);
   }
 
   void _decrementar(String opcao) {
@@ -44,12 +44,12 @@ class _SaborTileState extends State<SaborTile> {
         quantidadePorOpcao[opcao] = (quantidadePorOpcao[opcao]! - 1);
       }
     });
-    Provider.of<SaborStore>(context, listen: false).updateSaborTabView(widget.categoria, widget.sabor, quantidadePorOpcao);
+    Provider.of<UserSaborStore>(context, listen: false).updateSaborTabView(widget.categoria, widget.sabor, quantidadePorOpcao);
   }
 
   @override
   Widget build(BuildContext context) {
-    final tabViewState = Provider.of<SaborStore>(context);
+    final tabViewState = Provider.of<UserSaborStore>(context);
 
     return ExpansionTile(
       title: Text(widget.sabor),

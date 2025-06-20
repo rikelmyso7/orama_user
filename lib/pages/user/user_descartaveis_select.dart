@@ -1,70 +1,94 @@
+// user_descartaveis_select.dart
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
-import 'package:orama_user/stores/user/descartaveis_store.dart';
-import 'package:uuid/uuid.dart';
-import 'package:orama_user/others/descartaveis.dart';
+import 'package:orama_user/utils/loading_dialog_utils.dart';
+import 'package:provider/provider.dart';
+
+import 'package:orama_user/models/descartaveis_model.dart';
 import 'package:orama_user/routes/routes.dart';
+import 'package:orama_user/stores/user/descartaveis_store.dart';
+import 'package:orama_user/others/descartaveis.dart'; // contém a lista 'descartaveis'
 
 class UserDescartaveisSelect extends StatefulWidget {
   final String pdv;
   final String nome;
   final String data;
   final String userId;
+  final String? periodo;
 
   const UserDescartaveisSelect({
-    Key? key,
+    super.key,
     required this.pdv,
     required this.nome,
     required this.data,
     required this.userId,
-  }) : super(key: key);
+    required this.periodo,
+  });
 
   @override
   State<UserDescartaveisSelect> createState() => _UserDescartaveisSelectState();
 }
 
 class _UserDescartaveisSelectState extends State<UserDescartaveisSelect> {
-  final List<String> quantities = List<String>.filled(descartaveis.length, '');
-  final List<String> notes = List<String>.filled(descartaveis.length, '');
-  final List<bool> showNotes = List<bool>.filled(descartaveis.length, false);
-  final List<bool> showTextField =
-      List<bool>.filled(descartaveis.length, false);
+  // ---------- listas de estado ----------
+  late final List<String> _quantities;
+  late final List<String> _notes;
+  late final List<bool> _showNotes;
+  late final List<bool> _showTextField;
+  late final List<TextEditingController> _textControllers;
+  late final List<TextEditingController> _noteControllers;
+  late final List<FocusNode> _textFocusNodes;
+  late final List<bool> _hasError;
+  final dataFormat = DateFormat('dd-MM-yyyy HH:mm').format(DateTime.now());
 
-  final List<TextEditingController> textControllers = [];
-  final List<TextEditingController> noteControllers = [];
-  final List<FocusNode> textFocusNodes = [];
-  late ScrollController _scrollController;
+  // ---------- outros ----------
+  late final ScrollController _scrollController;
+  final String _dataFormat =
+      DateFormat('dd-MM-yyyy HH:mm').format(DateTime.now());
+  static const Color _primaryColor = Color(0xff60C03D);
 
+  // ---------- ciclo de vida ----------
   @override
   void initState() {
     super.initState();
-    for (int i = 0; i < descartaveis.length; i++) {
-      textControllers.add(TextEditingController());
-      noteControllers.add(TextEditingController());
-      textFocusNodes.add(FocusNode());
-    }
-
-    _scrollController = ScrollController();
-    _scrollController.addListener(_dismissKeyboardOnScroll);
+    _initializeLists(descartaveis.length);
+    _initializeControllers(descartaveis.length);
+    _setupScrollController();
   }
 
   @override
   void dispose() {
-    for (var controller in textControllers) {
-      controller.dispose();
-    }
-    for (var node in textFocusNodes) {
-      node.dispose();
-    }
-    _scrollController.removeListener(_dismissKeyboardOnScroll);
-    _scrollController.dispose();
+    for (final c in _textControllers) c.dispose();
+    for (final c in _noteControllers) c.dispose();
+    for (final n in _textFocusNodes) n.dispose();
+    _scrollController
+      ..removeListener(_dismissKeyboardOnScroll)
+      ..dispose();
     super.dispose();
   }
 
-  void _dismissKeyboard() {
-    FocusScope.of(context).unfocus();
+  // ---------- inicializações ----------
+  void _initializeLists(int count) {
+    _quantities = List.filled(count, '');
+    _notes = List.filled(count, '');
+    _showNotes = List.filled(count, false);
+    _showTextField = List.filled(count, false);
+    _hasError = List.filled(count, false);
   }
+
+  void _initializeControllers(int count) {
+    _textControllers = List.generate(count, (_) => TextEditingController());
+    _noteControllers = List.generate(count, (_) => TextEditingController());
+    _textFocusNodes = List.generate(count, (_) => FocusNode());
+  }
+
+  void _setupScrollController() {
+    _scrollController = ScrollController()
+      ..addListener(_dismissKeyboardOnScroll);
+  }
+
+  // ---------- helpers ----------
+  void _dismissKeyboard() => FocusScope.of(context).unfocus();
 
   void _dismissKeyboardOnScroll() {
     if (_scrollController.hasClients &&
@@ -73,216 +97,277 @@ class _UserDescartaveisSelectState extends State<UserDescartaveisSelect> {
     }
   }
 
-  Future<void> _saveData() async {
-    final List<Map<String, String>> itens = [];
+  List<String> _quantityOptions(String type) {
+    switch (type) {
+      case 'numeric':
+        return [...List.generate(5, (i) => i.toString()), 'Outro'];
+      case 'fractional':
+        return ['Vazio', '1/4', '2/4', '3/4', '4/4'];
+      case 'text':
+        return ['Cheio', 'Pouco', 'Vazio'];
+      case 'quantity':
+        return [
+          ...List.generate(5, (i) => i.toString()),
+          'Outro'
+        ]; // 0-10 embalagens, por ex.
+      default:
+        return [];
+    }
+  }
 
-    for (int i = 0; i < descartaveis.length; i++) {
-      final quantidade = quantities[i].trim();
-      final observacao = notes[i].trim();
+  String _documentId() => '${widget.nome} - $_dataFormat - ${widget.pdv}';
 
-      // Apenas adiciona se a quantidade foi preenchida
-      if (quantidade.isNotEmpty) {
-        itens.add({
-          'Item': descartaveis[i].name ?? 'Desconhecido',
-          'Quantidade': quantidade,
-          'Observacao': observacao,
-        });
+  Descartaveis _montaRelatorio(List<Map<String, String>> itens) {
+    return Descartaveis(
+      id: '${widget.nome} - ${dataFormat} - ${widget.pdv}',
+      name: widget.nome,
+      pdv: widget.pdv,
+      userId: widget.userId,
+      itens: itens,
+      observacoes: [],
+      data: DateTime.now(),
+      periodo: widget.periodo,
+    );
+  }
+
+  void _mostrarSnack(String msg, {Color color = Colors.red}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), backgroundColor: color),
+    );
+  }
+
+  // ---------- salvar ----------
+  Future<void> _salvar() async {
+    // ───── 1. Validação das quantidades ─────────────────────────────
+    bool preenchido = true;
+    int firstInvalid = -1;
+
+    for (int i = 0; i < _quantities.length; i++) {
+      if (_quantities[i].trim().isEmpty) {
+        _hasError[i] = true;
+        preenchido = false;
+        firstInvalid = firstInvalid == -1 ? i : firstInvalid;
+      } else {
+        _hasError[i] = false;
       }
     }
 
-    // Verifica se nenhum item foi preenchido
-    if (itens.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Por favor, preencha pelo menos um item.'),
-          backgroundColor: Colors.red,
-        ),
+    setState(() {}); // força rebuild para exibir erros
+    if (!preenchido) {
+      _mostrarSnack('Por favor, preencha todos os itens.');
+      _scrollController.animateTo(
+        firstInvalid * 230.0,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
       );
       return;
     }
 
-    final dataFormat = DateFormat('dd-MM-yyyy HH:mm').format(DateTime.now());
-    final comandaId = '${widget.nome} - $dataFormat - ${widget.pdv}';
-
-    final comanda = ComandaDescartaveis(
-      name: widget.nome,
-      id: comandaId,
-      pdv: widget.pdv,
-      userId: widget.userId,
-      itens: itens,
-      observacoes: [], // campo não usado mais
-      data: DateTime.now(),
-    );
+    // ───── 2. Mostra loading ────────────────────────────────────────
+    LoadingDialog.show(context);
 
     try {
-      await comanda.uploadToFirestore();
-      Navigator.pushReplacementNamed(context, RouteName.user_descartaveis_page);
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erro ao salvar dados: $e'),
-          backgroundColor: Colors.red,
-        ),
+      // ───── 3. Monta lista de itens + observações gerais ───────────
+      final itens = <Map<String, String>>[];
+      for (int i = 0; i < descartaveis.length; i++) {
+        itens.add({
+          'Item': descartaveis[i].name,
+          'Quantidade': _quantities[i],
+          'Observacao': _notes[i].trim(),
+        });
+      }
+
+      // Observações agregadas (compat. telas antigas)
+      final observacoesGerais = _notes
+          .where((n) => n.trim().isNotEmpty)
+          .map((n) => n.trim())
+          .toList();
+
+      // ───── 4. Cria relatório ──────────────────────────────────────
+      final relatorio = Descartaveis(
+        id: '${widget.nome} - $dataFormat - ${widget.pdv}',
+        name: widget.nome,
+        pdv: widget.pdv,
+        userId: widget.userId,
+        itens: itens,
+        observacoes: observacoesGerais,
+        data: DateTime.now(),
+        periodo: widget.periodo,
       );
+
+      // ───── 5. Salva via store (offline-ready) ─────────────────────
+      await context.read<DescartaveisStore>().addOrUpdateCard(relatorio);
+
+      if (!mounted) return;
+
+      // ───── 6. Fecha o loading e navega ────────────────────────────
+      Navigator.of(context)
+        ..pop() // fecha o dialog
+        ..pushReplacementNamed(RouteName.user_descartaveis_page);
+    } catch (e) {
+      Navigator.of(context).pop(); // fecha o dialog em caso de erro
+      _mostrarSnack('Erro ao salvar: $e');
     }
   }
 
-  Widget _buildQuantitySelector(int index) {
-    List<String> options;
-
-    switch (descartaveis[index].type) {
-      case 'numeric':
-        options = List.generate(6, (i) => i.toString());
-        break;
-      case 'fractional':
-        options = ['Vazio', '1/4', '2/4', '3/4', '4/4'];
-        break;
-      case 'text':
-        options = ['Cheio', 'Pouco', 'Vazio'];
-        break;
-      default:
-        options = [];
-    }
-
-    options.add('Outro');
-
-    // Verifica se "Outro" é a única opção disponível
-    if (options.length == 1 && options.first == 'Outro') {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-        child: TextField(
-          controller: textControllers[index],
-          keyboardType: TextInputType.name,
-          decoration: InputDecoration(
-            labelText: 'Digite a quantidade',
-            border: OutlineInputBorder(),
-            suffixIcon: quantities[index].isNotEmpty
-                ? Icon(Icons.check, color: Colors.green)
-                : Icon(Icons.close, color: Colors.red),
+  // ---------- UI widgets ----------
+  Widget _campoQuantidadeTexto(int index) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: TextField(
+        controller: _textControllers[index],
+        keyboardType: descartaveis[index].type == 'numeric'
+            ? TextInputType.number
+            : TextInputType.text,
+        decoration: InputDecoration(
+          labelText: 'Digite a quantidade',
+          border: const OutlineInputBorder(),
+          suffixIcon: Icon(
+            _quantities[index].isNotEmpty ? Icons.check : Icons.close,
+            color: _quantities[index].isNotEmpty ? Colors.green : Colors.red,
           ),
-          onChanged: (value) {
-            setState(() {
-              quantities[index] = value;
-            });
-          },
         ),
-      );
-    }
+        onChanged: (v) {
+          setState(() {
+            _quantities[index] = v;
+            if (v.trim().isNotEmpty) _hasError[index] = false;
+          });
+        },
+      ),
+    );
+  }
+
+  Widget _opcoesRadio(List<String> op, int index) {
+    return Wrap(
+      spacing: 16,
+      runSpacing: 4,
+      children: op.map((o) {
+        return Column(
+          children: [
+            Radio<String>(
+              activeColor: _primaryColor,
+              value: o,
+              groupValue: _quantities[index].isEmpty && _showTextField[index]
+                  ? 'Outro'
+                  : _quantities[index],
+              onChanged: (v) {
+                setState(() {
+                  final isOutro = v == 'Outro';
+                  _showTextField[index] = isOutro;
+                  _quantities[index] = isOutro ? '' : v!;
+                  _textControllers[index].clear();
+                  _hasError[index] = false;
+                });
+              },
+            ),
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  final isOutro = o == 'Outro';
+                  _showTextField[index] = isOutro;
+                  _quantities[index] = isOutro ? '' : o;
+                  _textControllers[index].clear();
+                  _hasError[index] = false;
+                });
+              },
+              child: Text(o, style: const TextStyle(fontSize: 14)),
+            ),
+          ],
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _seletorQuantidade(int index) {
+    final op = _quantityOptions(descartaveis[index].type);
+    if (op.isEmpty) return _campoQuantidadeTexto(index);
 
     return Column(
       children: [
-        ...options.map((option) {
-          if (option == 'Outro') {
-            return Container(); // Não exibe a opção "Outro" no RadioListTile
-          }
-          return RadioListTile<String>(
-            activeColor: const Color(0xff60C03D),
-            title: Text(option),
-            value: option,
-            groupValue: quantities[index],
-            onChanged: (value) {
-              setState(() {
-                showTextField[index] = false;
-                quantities[index] = value!;
-                textControllers[index].clear();
-              });
-            },
-          );
-        }).toList(),
-        if (showTextField[index])
+        _opcoesRadio(op, index),
+        if (_showTextField[index]) _campoQuantidadeTexto(index),
+      ],
+    );
+  }
+
+  Widget _secaoNotas(int index) {
+    return Column(
+      children: [
+        SwitchListTile(
+          activeColor: _primaryColor,
+          title: const Text('Adicionar Observações'),
+          value: _showNotes[index],
+          onChanged: (v) => setState(() => _showNotes[index] = v),
+        ),
+        if (_showNotes[index])
           Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            padding: const EdgeInsets.symmetric(vertical: 8),
             child: TextField(
-              controller: textControllers[index],
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: 'Digite a quantidade',
+              controller: _noteControllers[index],
+              decoration: const InputDecoration(
+                labelText: 'Observações',
                 border: OutlineInputBorder(),
               ),
-              onChanged: (value) {
-                setState(() {
-                  quantities[index] = value;
-                });
-              },
+              onChanged: (v) => setState(() => _notes[index] = v),
             ),
           ),
       ],
     );
   }
 
+  Widget _cardItem(int idx) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              descartaveis[idx].name,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            if (_hasError[idx])
+              const Padding(
+                padding: EdgeInsets.only(top: 4),
+                child: Text('Preencha este item antes de salvar.',
+                    style: TextStyle(color: Colors.red, fontSize: 13)),
+              ),
+            const SizedBox(height: 8),
+            _seletorQuantidade(idx),
+            _secaoNotas(idx),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ---------- build ----------
   @override
   Widget build(BuildContext context) {
+    // ordena alfabeticamente sem alterar a lista original
+    final sorted = List.generate(descartaveis.length, (i) => i)
+      ..sort((a, b) => descartaveis[a].name.compareTo(descartaveis[b].name));
+
     return GestureDetector(
       onTap: _dismissKeyboard,
       child: Scaffold(
         appBar: AppBar(
-          title: Text(
-            "Descartáveis - ${widget.pdv}",
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
-          ),
-          iconTheme: IconThemeData(color: Colors.white),
-          backgroundColor: const Color(0xff60C03D),
+          backgroundColor: _primaryColor,
+          iconTheme: const IconThemeData(color: Colors.white),
+          title: Text('Descartáveis • ${widget.pdv}',
+              style: const TextStyle(
+                  color: Colors.white, fontWeight: FontWeight.w500)),
           actions: [
-            IconButton(
-              icon: Icon(Icons.save),
-              onPressed: _saveData,
-            ),
+            IconButton(icon: const Icon(Icons.save), onPressed: _salvar),
           ],
         ),
         body: ListView.builder(
           controller: _scrollController,
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(16),
           itemCount: descartaveis.length,
-          itemBuilder: (context, index) {
-            return Card(
-              elevation: 2,
-              margin: const EdgeInsets.only(bottom: 16.0),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      descartaveis[index].name,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    _buildQuantitySelector(index),
-                    SwitchListTile(
-                      activeColor: const Color(0xff60C03D),
-                      title: Text("Adicionar Observações"),
-                      value: showNotes[index],
-                      onChanged: (value) {
-                        setState(() {
-                          showNotes[index] = value;
-                        });
-                      },
-                    ),
-                    if (showNotes[index])
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8.0),
-                        child: TextField(
-                          controller: noteControllers[index],
-                          decoration: InputDecoration(
-                            labelText: 'Observações',
-                            border: OutlineInputBorder(),
-                          ),
-                          onChanged: (value) {
-                            setState(() {
-                              notes[index] = value;
-                            });
-                          },
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            );
-          },
+          itemBuilder: (_, i) => _cardItem(sorted[i]),
         ),
       ),
     );

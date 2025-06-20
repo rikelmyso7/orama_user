@@ -2,12 +2,12 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:get_storage/get_storage.dart';
 import 'package:intl/intl.dart';
+import 'package:orama_user/models/comanda_model.dart';
 import 'package:orama_user/pages/user/user_descartaveis_page.dart';
 import 'package:orama_user/routes/routes.dart';
 import 'package:orama_user/stores/user/user_comanda_store.dart';
-import 'package:orama_user/utils/exit_dialog_utils.dart';
+import 'package:orama_user/stores/user_sabor_store.dart';
 import 'package:orama_user/utils/scroll_hide_fab.dart';
 import 'package:orama_user/widgets/UserBottomNavigationbar.dart';
 import 'package:orama_user/widgets/cards/user_comanda_card.dart';
@@ -22,17 +22,24 @@ class UserComandasPage extends StatefulWidget {
 
 class _UserComandasPageState extends State<UserComandasPage>
     with SingleTickerProviderStateMixin {
-  int _currentIndex = 0;
-  late ScrollController _scrollController;
-  late TabController _tabController;
-  DateTime _selectedDate = DateTime.now(); // Add this for date selection
+  static const int _comandasTabIndex = 0;
+  static const int _descartaveisTabIndex = 1;
+
+  late final ScrollController _scrollController;
+  late final TabController _tabController;
+  DateTime _selectedDate = DateTime.now();
 
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController();
     _tabController = TabController(length: 2, vsync: this);
-    final tabViewState = Provider.of<UserSaborStore>(context, listen: false);
+
+    // Carrega dados iniciais
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final store = Provider.of<UserComandaStore>(context, listen: false);
+      store.setSelectedDate(_selectedDate);
+    });
   }
 
   @override
@@ -42,16 +49,12 @@ class _UserComandasPageState extends State<UserComandasPage>
     super.dispose();
   }
 
-  void onTabTapped(int index) {
-    if (index == 1) {
+  void _onTabTapped(int index) {
+    if (index == _descartaveisTabIndex) {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => UserDescartaveisPage()),
       );
-    } else if (index == 0) {
-      setState(() {
-        _currentIndex = index;
-      });
     }
   }
 
@@ -59,37 +62,45 @@ class _UserComandasPageState extends State<UserComandasPage>
     setState(() {
       _selectedDate = newDate;
     });
+
+    final store = Provider.of<UserComandaStore>(context, listen: false);
+    store.setSelectedDate(newDate);
   }
 
   void _changeDate(int days) {
-    setState(() {
-      _selectedDate = _selectedDate.add(Duration(days: days));
-    });
+    _updateSelectedDate(_selectedDate.add(Duration(days: days)));
   }
 
-  List<Comanda2> filterComandasByPeriodo(
-      List<Comanda2> comandas, String periodo) {
-    return comandas.where((comanda) {
-      return comanda.name.contains("($periodo)");
-    }).toList();
+  Future<void> _logout() async {
+    try {
+      await FirebaseAuth.instance.signOut();
+      if (mounted) {
+        Navigator.of(context).pushReplacementNamed(RouteName.login);
+      }
+    } catch (e) {
+      // Handle logout error
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao fazer logout: $e')),
+        );
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final userId = GetStorage().read('userId');
-    final tabViewState = Provider.of<UserSaborStore>(context);
-    final dateFormatted = DateFormat('dd/MM/yyyy').format(_selectedDate);
     final store = Provider.of<UserComandaStore>(context);
+    final tabViewState = Provider.of<UserSaborStore>(context, listen: false);
 
     return Scaffold(
       bottomNavigationBar: UserBottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTabTapped: onTabTapped,
+        currentIndex: _comandasTabIndex,
+        onTabTapped: _onTabTapped,
       ),
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        iconTheme: IconThemeData(color: Colors.white),
-        title: Text(
+        iconTheme: const IconThemeData(color: Colors.white),
+        title: const Text(
           "Relatório Sorvetes",
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
         ),
@@ -97,124 +108,118 @@ class _UserComandasPageState extends State<UserComandasPage>
         backgroundColor: const Color(0xff60C03D),
         actions: [
           IconButton(
-            icon: Icon(Icons.logout),
-            onPressed: () async {
-              await FirebaseAuth.instance.signOut();
-              Navigator.of(context).pushReplacementNamed(RouteName.login);
-            },
+            icon: const Icon(Icons.logout),
+            onPressed: _logout,
           ),
         ],
         bottom: TabBar(
           labelColor: Colors.white,
           indicatorColor: Colors.amber,
           controller: _tabController,
-          tabs: [
-            Tab(text: "INICIO"),
+          tabs: const [
+            Tab(text: "INÍCIO"),
             Tab(text: "FINAL"),
           ],
         ),
       ),
-      body: Column(
+      body: Observer(builder: (context) {
+        return Column(
+          children: [
+            _buildDateSelector(),
+            Expanded(child: _buildTabBarView(store)),
+          ],
+        );
+      }),
+      floatingActionButton: _buildFloatingActionButton(tabViewState),
+    );
+  }
+
+  Widget _buildDateSelector() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              IconButton(
-                icon: Icon(
-                  Icons.arrow_back,
-                ),
-                onPressed: () => _changeDate(-1),
-              ),
-              DatePickerWidget(
-                key: UniqueKey(),
-                initialDate: _selectedDate,
-                onDateSelected: (newDate) {
-                  _updateSelectedDate(newDate);
-                },
-                dateFormat: DateFormat('dd MMMM yyyy', 'pt_BR'),
-                textStyle: const TextStyle(fontSize: 18),
-              ),
-              IconButton(
-                icon: Icon(Icons.arrow_forward),
-                onPressed: () => _changeDate(1),
-              ),
-            ],
+          IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => _changeDate(-1),
           ),
-          Expanded(
-            child: Observer(
-              builder: (_) {
-                final firebaseComandas =
-                    store.getComandasForSelectedDay(_selectedDate);
-
-                // 🔸 Recupera as comandas pendentes do GetStorage
-                final List<dynamic> pendentesRaw =
-                    GetStorage().read('comandasPendentes') ?? [];
-                final List<Comanda2> comandasPendentes = pendentesRaw
-                    .map((e) => Comanda2.fromJson(Map<String, dynamic>.from(e)))
-                    .where((c) =>
-                        c.data ==
-                        DateFormat('yyyy-MM-dd').format(_selectedDate))
-                    .toList();
-
-                // 🔸 Combina as duas listas
-                final todasComandas = [
-                  ...firebaseComandas,
-                  ...comandasPendentes
-                ];
-
-                if (todasComandas.isEmpty) {
-                  return Center(child: Text("Nenhuma comanda disponível."));
-                }
-
-                return TabBarView(
-                  controller: _tabController,
-                  children: [
-                    ListView.builder(
-                      controller: _scrollController,
-                      itemCount:
-                          filterComandasByPeriodo(todasComandas, "INICIO")
-                              .length,
-                      itemBuilder: (context, index) {
-                        final comanda = filterComandasByPeriodo(
-                            todasComandas, "INICIO")[index];
-                        return UserComandaCard(comanda: comanda);
-                      },
-                    ),
-                    ListView.builder(
-                      controller: _scrollController,
-                      itemCount: filterComandasByPeriodo(todasComandas, "FINAL")
-                          .length,
-                      itemBuilder: (context, index) {
-                        final comanda = filterComandasByPeriodo(
-                            todasComandas, "FINAL")[index];
-                        return UserComandaCard(comanda: comanda);
-                      },
-                    ),
-                  ],
-                );
-              },
-            ),
+          DatePickerWidget(
+            key: ValueKey(_selectedDate),
+            initialDate: _selectedDate,
+            onDateSelected: _updateSelectedDate,
+            dateFormat: DateFormat('dd MMMM yyyy', 'pt_BR'),
+            textStyle: const TextStyle(fontSize: 18),
+          ),
+          IconButton(
+            icon: const Icon(Icons.arrow_forward),
+            onPressed: () => _changeDate(1),
           ),
         ],
       ),
-      floatingActionButton: ScrollHideFab(
-        scrollController: _scrollController,
-        child: FloatingActionButton.extended(
-          backgroundColor: const Color(0xff60C03D),
-          icon: Icon(
-            Icons.add,
-            color: Colors.white,
+    );
+  }
+
+  Widget _buildTabBarView(UserComandaStore store) {
+    return TabBarView(
+      controller: _tabController,
+      children: [
+        Observer(builder: (_) {
+          return _buildComandaList(
+              store.getComandasByPeriodo(_selectedDate, 'INICIO'));
+        }),
+        Observer(builder: (_) {
+          return _buildComandaList(
+              store.getComandasByPeriodo(_selectedDate, 'FINAL'));
+        }),
+      ],
+    );
+  }
+
+  Widget _buildComandaList(List<Comanda2> comandas) {
+      print('📋 Exibindo ${comandas.length} comandas na interface');
+      if (comandas.isEmpty) {
+        return const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.library_books_outlined, size: 64, color: Colors.grey),
+              SizedBox(height: 16),
+              Text(
+                "Nenhuma comanda disponível",
+                style: TextStyle(fontSize: 18, color: Colors.grey),
+              ),
+            ],
           ),
-          label: Text(
-            'add',
-            style: TextStyle(color: Colors.white),
-          ),
-          onPressed: () {
-            tabViewState.resetExpansionState();
-            tabViewState.resetSaborTabView();
-            Navigator.pushNamed(context, RouteName.user_add_sorvetes);
-          },
+        );
+      }
+      return ListView.builder(
+        key: ValueKey(comandas.length),
+        controller: _scrollController,
+        padding: const EdgeInsets.all(8.0),
+        itemCount: comandas.length,
+        itemBuilder: (context, index) {
+          return UserComandaCard(comanda: comandas[index]);
+        },
+      );
+    
+  }
+
+  Widget _buildFloatingActionButton(UserSaborStore tabViewState) {
+    return ScrollHideFab(
+      scrollController: _scrollController,
+      child: FloatingActionButton.extended(
+        backgroundColor: const Color(0xff60C03D),
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text(
+          'Adicionar',
+          style: TextStyle(color: Colors.white),
         ),
+        onPressed: () {
+          tabViewState.resetExpansionState();
+          tabViewState.resetSaborTabView();
+          Navigator.pushNamed(context, RouteName.user_add_sorvetes);
+        },
       ),
     );
   }

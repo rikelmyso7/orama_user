@@ -1,20 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // Adicionado para Clipboard
+import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:orama_user/models/descartaveis_model.dart';
 import 'package:orama_user/others/descartaveis.dart';
 import 'package:orama_user/pages/user/user_descartaveis_edit.dart';
 import 'package:orama_user/stores/user/connectivity_store.dart';
 import 'package:orama_user/stores/user/descartaveis_store.dart';
-import 'package:orama_user/stores/user/user_comanda_store.dart';
 import 'package:orama_user/utils/comanda_utils.dart';
 import 'package:orama_user/utils/exit_dialog_utils.dart';
+import 'package:orama_user/utils/loading_dialog_utils.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class UserDescartavelCard extends StatelessWidget {
-  final ComandaDescartaveis comanda;
+  final Descartaveis comanda;
 
   const UserDescartavelCard({Key? key, required this.comanda})
       : super(key: key);
@@ -38,7 +39,7 @@ class UserDescartavelCard extends StatelessWidget {
                   child: Column(
                     children: [
                       Text(
-                        'Atendente - ${comanda.name}',
+                        'Atendente - ${comanda.name} | ${comanda.periodo}',
                         style: const TextStyle(
                             fontSize: 16, fontWeight: FontWeight.bold),
                       ),
@@ -47,7 +48,7 @@ class UserDescartavelCard extends StatelessWidget {
                           'Verifique a conexão com a internet...',
                           style: TextStyle(
                             fontSize: 10,
-                            color: Colors.red,
+                            color: Colors.grey,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -66,23 +67,42 @@ class UserDescartavelCard extends StatelessWidget {
     );
   }
 
+  Widget _buildStatusIcon() {
+    switch (comanda.status) {
+      case DescartaveisStatus.pendente:
+        return Column(
+          children: [
+            const Icon(Icons.check, size: 22, color: Colors.grey),
+            Text(
+              "Enviado\nAguardando Internet",
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey),
+            ),
+          ],
+        );
+      case DescartaveisStatus.entregue:
+        return const Icon(Icons.done_all, size: 22, color: Colors.green);
+    }
+  }
+
   void _deleteComanda(BuildContext context) {
     ComandaUtils.deleteComandaDescartaveis(context, comanda);
   }
 
   void _changeDate(BuildContext context) async {
-    final DateTime? pickedDate = await showDatePicker(
+    final picked = await showDatePicker(
       context: context,
       initialDate: comanda.data,
       firstDate: DateTime(2000),
       lastDate: DateTime(2101),
     );
+    if (picked == null || picked == comanda.data) return;
 
-    if (pickedDate != null && pickedDate != comanda.data) {
-      comanda.data = pickedDate;
-      final store = DescartaveisStore();
-      store.addOrUpdateDescartavel(comanda);
-    }
+    final store = context.read<DescartaveisStore>();
+
+    // remove e add => Observer percebe
+    store.deleteComanda(comanda.id); // já remove da lista observável
+    store.addOrUpdateCard(comanda.copyWith(data: picked));
   }
 
   void _editComanda(BuildContext context) {
@@ -96,40 +116,44 @@ class UserDescartavelCard extends StatelessWidget {
 
   // Função para gerar o texto do relatório
   String _generateReportText() {
-  final dateFormatted = DateFormat('dd/MM/yyyy').format(comanda.data);
-  StringBuffer report = StringBuffer();
+    final sortedItems = List<Map<String, String>>.from(comanda.itens);
+    sortedItems.sort((a, b) => (a['Item'] ?? '').compareTo(b['Item'] ?? ''));
+    final dateFormatted = DateFormat('dd/MM/yyyy').format(comanda.data);
+    StringBuffer report = StringBuffer();
 
-  report.writeln("📝 *Comanda de Sabores*"); // Corrigido
-  report.writeln("📍 *PDV:* ${comanda.pdv}");
-  report.writeln("👤 *Atendente:* ${comanda.name}");
-  report.writeln("📅 *Data:* ${dateFormatted}\n");
-  report.writeln('\n📦 *Itens:*');
+    report.writeln("📝 *Relatório Descartaveis*"); // Corrigido
+    report.writeln("📍 *PDV:* ${comanda.pdv}");
+    report.writeln("👤 *Atendente:* ${comanda.name}");
+    report.writeln("📅 *Data:* ${dateFormatted}\n");
+    report.writeln('\n📦 *Itens:*');
 
-  if (comanda.itens.isNotEmpty) {
-    for (var item in comanda.itens) {
-      final itemName = item['Item'] ?? 'Item';
-      final quantity = item['Quantidade'] ?? '';
-      final observationIndex = comanda.itens.indexOf(item);
+    if (sortedItems.isNotEmpty) {
+      for (var item in sortedItems) {
+        final itemName = item['Item'] ?? 'Item';
+        final quantity = item['Quantidade'] ?? '';
+        final observationIndex = comanda.itens.indexOf(item);
 
-      report.writeln('  - *$itemName*');
-      report.writeln('    Quantidade: $quantity');
+        report.writeln('  - *$itemName*');
+        report.writeln('    Quantidade: $quantity');
 
-      if (observationIndex < comanda.observacoes.length) {
-        report.writeln('    Observação: ${comanda.observacoes[observationIndex]}');
+        if (observationIndex < comanda.observacoes.length) {
+          report.writeln(
+              '    Observação: ${comanda.observacoes[observationIndex]}');
+        }
+      }
+    } else {
+      for (int i = 0; i < descartaveis.length; i++) {
+        final quantity =
+            i < comanda.observacoes.length ? comanda.observacoes[i] : '';
+        report.writeln('  - *${descartaveis[i].name}*');
+        report.writeln('    Quantidade: $quantity');
+        if (i < comanda.observacoes.length) {
+          report.writeln('    📝 Observação: ${comanda.observacoes[i]}');
+        }
       }
     }
-  } else {
-    for (int i = 0; i < descartaveis.length; i++) {
-      final quantity = i < comanda.observacoes.length ? comanda.observacoes[i] : '';
-      report.writeln('  - *${descartaveis[i].name}*');
-      report.writeln('    Quantidade: $quantity');
-      if (i < comanda.observacoes.length) {
-        report.writeln('    📝 Observação: ${comanda.observacoes[i]}');
-      }
-    }
-  }
 
-  return report.toString();
+    return report.toString();
   }
 
   // Função para compartilhar o relatório
@@ -201,6 +225,10 @@ class UserDescartavelCard extends StatelessWidget {
                   color: Colors.green, fontWeight: FontWeight.bold),
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: _buildStatusIcon(),
+          ),
         ],
       ),
     );
@@ -219,10 +247,14 @@ class UserDescartavelCard extends StatelessWidget {
   }
 
   List<Widget> _buildNewFormatList() {
-    return comanda.itens.map((item) {
+    List<Map<String, String>> sortedItems = List.from(comanda.itens);
+    sortedItems.sort((a, b) => (a['Item'] ?? '').compareTo(b['Item'] ?? ''));
+
+    return sortedItems.map((item) {
       final itemName = item['Item'] ?? 'Item';
       final quantity = item['Quantidade'] ?? '';
-      final observationIndex = comanda.itens.indexOf(item);
+      final observationIndex = item['Observacao'] ?? '';
+      ;
 
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 4.0),
@@ -237,12 +269,10 @@ class UserDescartavelCard extends StatelessWidget {
               padding: const EdgeInsets.only(left: 15),
               child: Text('- Quantidade: $quantity'),
             ),
-            if (observationIndex < comanda.observacoes.length)
-              Padding(
-                padding: const EdgeInsets.only(left: 15),
-                child: Text(
-                    '- Observação: ${comanda.observacoes[observationIndex]}'),
-              ),
+            Padding(
+              padding: const EdgeInsets.only(left: 15),
+              child: Text('- Observação: ${observationIndex}'),
+            ),
           ],
         ),
       );

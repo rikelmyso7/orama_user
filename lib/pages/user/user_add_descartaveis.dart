@@ -63,7 +63,7 @@ class _UserAddDescartaveisState extends State<UserAddDescartaveis> {
       appBar: AppBar(
         iconTheme: const IconThemeData(color: Colors.white),
         title: const Text(
-          "Descartáveis",
+          "Adicionar Descartáveis",
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
         ),
         elevation: 4,
@@ -79,83 +79,82 @@ class _UserAddDescartaveisState extends State<UserAddDescartaveis> {
           ),
         ],
       ),
-      body: Center(
-        child: SafeArea(
-          child: Container(
-            height: MediaQuery.of(context).size.height / 2,
-            child: Form(
-              key: formKey,
-              child: Column(
-                children: [
-                  MyTextField(
-                    controller: _nameController,
-                    hintText: 'Seu Nome',
-                    validator: FieldValidators.validateName,
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 10),
-                    child: MyDropDownButton(
-                      hint: "Periodo",
-                      options: periodo,
-                      value: periodoSelecionado,
-                      onChanged: (result) {
-                        setState(() {
-                          periodoSelecionado = result;
-                          _validateForm(); // Update validation state
-                        });
-                      },
-                    ),
-                  ),
-                  SizedBox(
-                    height: 15,
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 15),
-                    child: MyDropDownButton(
-                      hint: "Ponto de Venda",
-                      options: pdvs,
-                      value: pdvSelecionado,
-                      onChanged: (result) {
-                        setState(() {
-                          pdvSelecionado = result;
-                          _validateForm(); // Update validation state
-                        });
-                      },
-                    ),
-                  ),
-                  SizedBox(
-                    height: 15,
-                  ),
-                  ValueListenableBuilder<bool>(
-                    valueListenable: isFormValid,
-                    builder: (context, isValid, child) {
-                      return MyButton(
-                        buttonName: 'Próximo',
-                        onTap: isValid
-                            ? () {
-                                if (formKey.currentState!.validate()) {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          UserDescartaveisSelect(
-                                        pdv: pdvSelecionado ?? '',
-                                        nome:
-                                            "${_nameController.text} (${periodoSelecionado})",
-                                        data: _date.toString(),
-                                        userId: GetStorage().read('userId'),
-                                      ),
-                                    ),
-                                  );
-                                }
-                              }
-                            : null,
-                        enabled: isValid,
-                      );
+      body: SafeArea(
+        child: Container(
+          height: MediaQuery.of(context).size.height,
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                MyTextField(
+                  controller: _nameController,
+                  hintText: 'Seu Nome',
+                  validator: FieldValidators.validateName,
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: MyDropDownButton(
+                    hint: "Periodo",
+                    options: periodo,
+                    value: periodoSelecionado,
+                    onChanged: (result) {
+                      setState(() {
+                        periodoSelecionado = result;
+                        _validateForm(); // Update validation state
+                      });
                     },
                   ),
-                ],
-              ),
+                ),
+                SizedBox(
+                  height: 15,
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 15),
+                  child: MyDropDownButton(
+                    hint: "Ponto de Venda",
+                    options: pdvs,
+                    value: pdvSelecionado,
+                    onChanged: (result) {
+                      setState(() {
+                        pdvSelecionado = result;
+                        _validateForm(); // Update validation state
+                      });
+                    },
+                  ),
+                ),
+                SizedBox(
+                  height: 15,
+                ),
+                ValueListenableBuilder<bool>(
+                  valueListenable: isFormValid,
+                  builder: (context, isValid, child) {
+                    return MyButton(
+                      buttonName: 'Próximo',
+                      onTap: isValid
+                          ? () {
+                              if (formKey.currentState!.validate()) {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        UserDescartaveisSelect(
+                                      pdv: pdvSelecionado ?? '',
+                                      nome: _nameController.text,
+                                      data: _date.toString(),
+                                      userId: GetStorage().read('userId'),
+                                      periodo: periodoSelecionado,
+                                    ),
+                                  ),
+                                );
+                              }
+                            }
+                          : null,
+                      enabled: isValid,
+                    );
+                  },
+                ),
+              ],
             ),
           ),
         ),
