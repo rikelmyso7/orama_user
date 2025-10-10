@@ -82,6 +82,38 @@ mixin _$UserComandaStore on _UserComandaStoreBase, Store {
     });
   }
 
+  late final _$isSyncingAtom =
+      Atom(name: '_UserComandaStoreBase.isSyncing', context: context);
+
+  @override
+  bool get isSyncing {
+    _$isSyncingAtom.reportRead();
+    return super.isSyncing;
+  }
+
+  @override
+  set isSyncing(bool value) {
+    _$isSyncingAtom.reportWrite(value, super.isSyncing, () {
+      super.isSyncing = value;
+    });
+  }
+
+  late final _$syncErrorAtom =
+      Atom(name: '_UserComandaStoreBase.syncError', context: context);
+
+  @override
+  String? get syncError {
+    _$syncErrorAtom.reportRead();
+    return super.syncError;
+  }
+
+  @override
+  set syncError(String? value) {
+    _$syncErrorAtom.reportWrite(value, super.syncError, () {
+      super.syncError = value;
+    });
+  }
+
   late final _$deleteComandaAsyncAction =
       AsyncAction('_UserComandaStoreBase.deleteComanda', context: context);
 
@@ -148,6 +180,8 @@ comandas: ${comandas},
 pendingComandas: ${pendingComandas},
 selectedDate: ${selectedDate},
 isLoading: ${isLoading},
+isSyncing: ${isSyncing},
+syncError: ${syncError},
 comandasForSelectedDate: ${comandasForSelectedDate}
     ''';
   }

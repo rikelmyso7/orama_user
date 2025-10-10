@@ -105,7 +105,7 @@ class UserComandaCard extends StatelessWidget {
                         'Atendente - ${comanda.name} | ${comanda.periodo}',
                         style: const TextStyle(
                             fontSize: 16, fontWeight: FontWeight.bold),
-                            overflow: TextOverflow.ellipsis,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       if (connectivityStore.isOffline)
                         const Text(
@@ -136,16 +136,35 @@ class UserComandaCard extends StatelessWidget {
       case ComandaStatus.pendente:
         return Column(
           children: [
-            const Icon(Icons.check, size: 22, color: Colors.grey),
-            Text(
-              "Enviado\nAguardando Internet",
+            const Icon(Icons.cloud_upload, size: 22, color: Colors.orange),
+            const SizedBox(height: 4),
+            const Text(
+              "Aguardando\nSincronização",
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey),
+              style: TextStyle(
+                color: Colors.orange,
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
         );
       case ComandaStatus.entregue:
-        return const Icon(Icons.done_all, size: 22, color: Colors.green);
+        return Column(
+          children: [
+            const Icon(Icons.cloud_done, size: 22, color: Colors.green),
+            const SizedBox(height: 4),
+            const Text(
+              "Sincronizado",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.green,
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        );
     }
   }
 
@@ -176,7 +195,6 @@ class UserComandaCard extends StatelessWidget {
     await store.deleteComanda(comanda.id);
     comanda.data = pickedDate;
     await store.addOrUpdateCard(comanda);
-    
   }
 
   Widget _buildHeader(BuildContext context) {
@@ -271,7 +289,7 @@ class UserComandaCard extends StatelessWidget {
           TextButton(
               onPressed: () => _changeDate(context),
               child: Text(
-                DateFormat('dd/MM/yyyy').format(comanda.data),
+                DateFormat('dd/MM/yyyy HH:mm').format(comanda.data),
                 style: const TextStyle(
                     color: Colors.green, fontWeight: FontWeight.bold),
               )),
@@ -306,7 +324,10 @@ class UserComandaCard extends StatelessWidget {
 
         final isMassa = categoria.key == 'Massas';
         final isManteiga = saborEntry.key == 'Manteiga';
-        final unidade = isManteiga ? 'Pote' : (isMassa ? 'Tubos' : 'Cubas');
+        final isBolacha = categoria.key == 'Bolachas';
+        final unidade = isManteiga
+            ? 'Pote'
+            : (isMassa ? 'Tubos' : (isBolacha ? 'Pacotes' : 'Cubas'));
         final saborNome = isManteiga
             ? "Manteiga"
             : (isMassa ? "Massa de ${saborEntry.key}" : saborEntry.key);
@@ -317,19 +338,29 @@ class UserComandaCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                saborNome,
+                isBolacha ? "Bolacha de ${saborEntry.key}" : saborNome,
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               ...opcoesValidas.map((quantidadeEntry) {
+                String textoExibicao;
+                if (isManteiga) {
+                  textoExibicao = "- ${quantidadeEntry.key} $unidade";
+                } else if (isMassa) {
+                  textoExibicao = "- ${quantidadeEntry.key} $unidade";
+                } else if (isBolacha) {
+                  final quantidade = int.tryParse(quantidadeEntry.key) ?? 1;
+                  final unidadePlural = quantidade > 1 ? 'Pacotes' : 'Pacote';
+                  textoExibicao = "- ${quantidadeEntry.key} $unidadePlural";
+                } else {
+                  final unidadePlural =
+                      quantidadeEntry.value > 1 ? 'Cubas' : 'Cuba';
+                  textoExibicao =
+                      "- ${quantidadeEntry.value} $unidadePlural ${quantidadeEntry.key}";
+                }
+
                 return Padding(
                   padding: const EdgeInsets.only(left: 16.0),
-                  child: Text(
-                    isManteiga
-                        ? "- ${quantidadeEntry.key} $unidade"
-                        : isMassa
-                            ? "- ${quantidadeEntry.key} $unidade"
-                            : "- ${quantidadeEntry.value} $unidade ${quantidadeEntry.key}",
-                  ),
+                  child: Text(textoExibicao),
                 );
               }).toList(),
             ],

@@ -22,25 +22,31 @@ class _UserSaborTileState extends State<UserSaborTile> {
   void initState() {
     super.initState();
     final tabViewState = Provider.of<UserSaborStore>(context, listen: false);
-    
+
     // Determina as opções com base na categoria
     if (widget.categoria == 'Massas' && widget.sabor != 'Manteiga') {
+      opcoes = ['0', '1', '2', '3', '4'];
+    } else if (widget.categoria == 'Bolachas') {
       opcoes = ['0', '1', '2', '3', '4'];
     } else {
       opcoes = ['0', '1/4', '2/4', '3/4', '4/4'];
     }
 
-    quantidadePorOpcao = tabViewState.saboresSelecionados[widget.categoria]?[widget.sabor] ?? {
-      for (var opcao in opcoes) opcao: 0,
-    };
-    isExpanded = tabViewState.expansionState[widget.categoria]?[widget.sabor] ?? false;
+    quantidadePorOpcao =
+        tabViewState.saboresSelecionados[widget.categoria]?[widget.sabor] ??
+            {
+              for (var opcao in opcoes) opcao: 0,
+            };
+    isExpanded =
+        tabViewState.expansionState[widget.categoria]?[widget.sabor] ?? false;
   }
 
   void _incrementar(String opcao) {
     setState(() {
       quantidadePorOpcao[opcao] = (quantidadePorOpcao[opcao]! + 1);
     });
-    Provider.of<UserSaborStore>(context, listen: false).updateSaborTabView(widget.categoria, widget.sabor, quantidadePorOpcao);
+    Provider.of<UserSaborStore>(context, listen: false)
+        .updateSaborTabView(widget.categoria, widget.sabor, quantidadePorOpcao);
   }
 
   void _decrementar(String opcao) {
@@ -49,7 +55,8 @@ class _UserSaborTileState extends State<UserSaborTile> {
         quantidadePorOpcao[opcao] = (quantidadePorOpcao[opcao]! - 1);
       }
     });
-    Provider.of<UserSaborStore>(context, listen: false).updateSaborTabView(widget.categoria, widget.sabor, quantidadePorOpcao);
+    Provider.of<UserSaborStore>(context, listen: false)
+        .updateSaborTabView(widget.categoria, widget.sabor, quantidadePorOpcao);
   }
 
   @override
@@ -63,7 +70,8 @@ class _UserSaborTileState extends State<UserSaborTile> {
         setState(() {
           isExpanded = expanded;
         });
-        tabViewState.setExpansionState(widget.categoria, widget.sabor, expanded);
+        tabViewState.setExpansionState(
+            widget.categoria, widget.sabor, expanded);
       },
       children: opcoes.map((opcao) {
         return ListTile(

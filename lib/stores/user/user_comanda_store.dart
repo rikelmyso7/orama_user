@@ -43,6 +43,12 @@ abstract class _UserComandaStoreBase with Store {
   @observable
   bool isLoading = false;
 
+  @observable
+  bool isSyncing = false;
+
+  @observable
+  String? syncError;
+
   @computed
   List<Comanda2> get comandasForSelectedDate =>
       _filterComandasByDate(selectedDate);
@@ -91,11 +97,16 @@ abstract class _UserComandaStoreBase with Store {
         _upsertComanda(comanda);
         _removePendingComanda(comanda);
         await _saveComandasToCache();
-      } catch (_) {
+        await _savePendingComandasToCache();
+        print('✅ Comanda ${comanda.id} salva e sincronizada com sucesso');
+      } catch (e) {
+        print('⚠️ Erro ao enviar comanda ${comanda.id} para Firebase: $e');
+        print('📦 Salvando comanda offline para sincronização posterior');
         comanda.status = ComandaStatus.pendente;
         await _savePendingComanda(comanda);
       }
     } else {
+      print('📴 Sem conexão - salvando comanda ${comanda.id} offline');
       comanda.status = ComandaStatus.pendente;
       await _savePendingComanda(comanda);
     }
@@ -111,24 +122,58 @@ abstract class _UserComandaStoreBase with Store {
 
   @action
   Future<void> syncPendingComandas() async {
-    if (!await _hasConnection()) return;
-
-    final successfulSyncs = <String>[];
-
-    for (final comanda in pendingComandas.toList()) {
-      try {
-        await _sendToFirestore(comanda);
-        comanda.status = ComandaStatus.entregue;
-        _upsertComanda(comanda);
-        successfulSyncs.add(comanda.id);
-      } catch (e) {
-        print('Falha ao sincronizar comanda ${comanda.id}: $e');
-      }
+    if (isSyncing) {
+      print('⏳ Sincronização já em andamento, ignorando...');
+      return;
     }
 
-    pendingComandas.removeWhere((c) => successfulSyncs.contains(c.id));
-    await _savePendingComandasToCache();
-    await _saveComandasToCache();
+    if (!await _hasConnection()) {
+      syncError = 'Sem conexão com a internet';
+      print('❌ Sem conexão para sincronizar');
+      return;
+    }
+
+    try {
+      isSyncing = true;
+      syncError = null;
+      final successfulSyncs = <String>[];
+      final failedSyncs = <String, String>{};
+
+      print('🔄 Iniciando sincronização de ${pendingComandas.length} comandas pendentes');
+
+      for (final comanda in pendingComandas.toList()) {
+        try {
+          await _sendToFirestore(comanda);
+          comanda.status = ComandaStatus.entregue;
+          _upsertComanda(comanda);
+          successfulSyncs.add(comanda.id);
+          print('✅ Comanda ${comanda.id} sincronizada com sucesso');
+        } catch (e) {
+          failedSyncs[comanda.id] = e.toString();
+          print('❌ Falha ao sincronizar comanda ${comanda.id}: $e');
+        }
+      }
+
+      // Remove apenas as que foram sincronizadas com sucesso
+      pendingComandas.removeWhere((c) => successfulSyncs.contains(c.id));
+
+      await _savePendingComandasToCache();
+      await _saveComandasToCache();
+
+      if (successfulSyncs.isNotEmpty) {
+        print('✅ ${successfulSyncs.length} comandas sincronizadas com sucesso');
+      }
+
+      if (failedSyncs.isNotEmpty) {
+        syncError = '${failedSyncs.length} comandas falharam ao sincronizar';
+        print('⚠️ ${failedSyncs.length} comandas falharam');
+      }
+    } catch (e) {
+      syncError = 'Erro na sincronização: $e';
+      print('❌ Erro geral na sincronização: $e');
+    } finally {
+      isSyncing = false;
+    }
   }
 
   @action
@@ -198,10 +243,22 @@ abstract class _UserComandaStoreBase with Store {
   }
 
   List<Comanda2> _filterComandasByDate(DateTime date) {
-    final allComandas = [...comandas, ...pendingComandas];
+    // Usa Map para evitar duplicação por ID
+    final Map<String, Comanda2> comandasMap = {};
+
+    // Adiciona comandas entregues primeiro
+    for (final comanda in comandas) {
+      comandasMap[comanda.id] = comanda;
+    }
+
+    // Sobrescreve com comandas pendentes (prioridade para status mais recente)
+    for (final comanda in pendingComandas) {
+      comandasMap[comanda.id] = comanda;
+    }
+
     print('📅 Filtrando comandas para a data: ${date.toIso8601String()}');
 
-    return allComandas.where((comanda) {
+    final filteredList = comandasMap.values.where((comanda) {
       final DateTime comandaDate;
 
       if (comanda.data is DateTime) {
@@ -222,6 +279,11 @@ abstract class _UserComandaStoreBase with Store {
 
       return match;
     }).toList();
+
+    // Ordena por ID decrescente (comandas mais recentes primeiro)
+    filteredList.sort((a, b) => b.id.compareTo(a.id));
+
+    return filteredList;
   }
 
   Future<void> _loadComandasFromCache() async {

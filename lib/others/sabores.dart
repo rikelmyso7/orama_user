@@ -41,6 +41,11 @@ const Map<String, List<String>> sabores = {
     'Chocolate',
     'Manteiga',
   ],
+  'Bolachas': [
+    'Baunilha',
+    'Chocolate',
+    'Canela',
+  ],
   'Especiais': [
     'Baunilha com Mirtilo',
     'Espumante',
