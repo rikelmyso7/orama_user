@@ -29,9 +29,9 @@ class _UserAddDescartaveisState extends State<UserAddDescartaveis> {
     "Sítio Sassafraz",
     "Restaurante Travitália",
     "Vinhos Micheletto",
-    "Da Roça Gastronomia",
     "Bendito Quintal",
     "Bar da Cachoeira",
+    "Sítio São Francisco",
     "Outro",
   ];
   String? pdvSelecionado;
