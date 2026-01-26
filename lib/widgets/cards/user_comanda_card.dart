@@ -1,0 +1,406 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // Adicionado para Clipboard
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:intl/intl.dart';
+import 'package:orama_user/models/comanda_model.dart';
+import 'package:orama_user/pages/user/user_sabores_edit_page.dart';
+import 'package:orama_user/stores/user/connectivity_store.dart';
+import 'package:orama_user/stores/user/user_comanda_store.dart';
+import 'package:orama_user/utils/comanda_utils.dart';
+import 'package:orama_user/utils/exit_dialog_utils.dart';
+import 'package:orama_user/utils/loading_dialog_utils.dart';
+import 'package:orama_user/utils/show_snackbar.dart';
+import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+class UserComandaCard extends StatelessWidget {
+  final Comanda2 comanda;
+
+  UserComandaCard({
+    required this.comanda,
+    Key? key,
+  }) : super(key: key ?? ValueKey(comanda.id));
+
+  // Função para compartilhar a comanda ou copiar para a área de transferência
+  Future<void> _shareReport(BuildContext context) async {
+    if (!context.mounted) return;
+
+    final reportText = _generateReportText();
+    bool whatsappOpened = false;
+
+    try {
+      final encodedText = Uri.encodeComponent(reportText);
+      final Uri whatsappUri = Uri.parse('whatsapp://send?text=$encodedText');
+
+      final canLaunch = await canLaunchUrl(whatsappUri);
+
+      if (canLaunch) {
+        await launchUrl(whatsappUri);
+        whatsappOpened = true;
+      }
+    } catch (e) {
+      print('Erro ao tentar abrir WhatsApp: $e');
+    }
+
+    // Se WhatsApp não abriu, copia para clipboard
+    if (!whatsappOpened) {
+      try {
+        await Clipboard.setData(ClipboardData(text: reportText));
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Relatório copiado para área de transferência'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      } catch (e) {
+        print('Erro ao copiar para clipboard: $e');
+      }
+    }
+  }
+
+  // Função para gerar a mensagem da comanda
+  String _generateReportText() {
+    StringBuffer message = StringBuffer();
+
+    message.writeln("📝 *Estoque de Sorvete*");
+    message.writeln("*PDV:* ${comanda.pdv}");
+    message.writeln("*Atendente:* ${comanda.name}");
+    message.writeln(
+        "*Data:* ${DateFormat('dd/MM/yyyy HH:MM').format(comanda.data)}\n");
+
+    if (comanda.caixaInicial != null && comanda.caixaInicial!.isNotEmpty) {
+      message.writeln("💰 *Caixa Inicial:* R\$ ${comanda.caixaInicial}");
+    }
+    if (comanda.caixaFinal != null && comanda.caixaFinal!.isNotEmpty) {
+      message.writeln("💰 *Caixa Final:* R\$ ${comanda.caixaFinal}");
+    }
+    if (comanda.pixInicial != null && comanda.pixInicial!.isNotEmpty) {
+      message.writeln("💳 *Pix Inicial:* R\$ ${comanda.pixInicial}");
+    }
+    if (comanda.pixFinal != null && comanda.pixFinal!.isNotEmpty) {
+      message.writeln("💳 *Pix Final:* R\$ ${comanda.pixFinal}");
+    }
+
+    message.writeln("\n🍦 *Sabores:*");
+
+    comanda.sabores.forEach((categoria, sabores) {
+      message.writeln("\n*$categoria:*");
+
+      sabores.forEach((sabor, opcoes) {
+        String saborNome = categoria == 'Massas' ? "Massa de $sabor" : sabor;
+        message.writeln("🔹 *$saborNome*");
+
+        opcoes.forEach((opcao, quantidade) {
+          if (quantidade > 0) {
+            String unidade = (categoria == 'Massas') ? 'Tubos' : 'Cubas';
+            if (sabor == 'Manteiga') unidade = 'Pote';
+            if (categoria == 'Festa da Uva') unidade = 'Baldes';
+
+            message.writeln("   - $quantidade $unidade ($opcao)");
+          }
+        });
+      });
+    });
+
+    return message.toString();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final connectivityStore = Provider.of<ConnectivityStore>(context);
+
+    return Padding(
+      padding: const EdgeInsets.all(10.0),
+      child: Card(
+        elevation: 2,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Column(
+                    children: [
+                      Text(
+                        'Atendente - ${comanda.name} | ${comanda.periodo}',
+                        style: const TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (connectivityStore.isOffline)
+                        const Text(
+                          'Verifique a conexão com a internet...',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.grey,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            _buildHeader(context),
+            _buildDateRow(context),
+            const SizedBox(height: 8.0),
+            ..._buildSaborList(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusIcon() {
+    switch (comanda.status) {
+      case ComandaStatus.pendente:
+        return Column(
+          children: [
+            const Icon(Icons.cloud_upload, size: 22, color: Colors.orange),
+            const SizedBox(height: 4),
+            const Text(
+              "Aguardando\nSincronização",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.orange,
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        );
+      case ComandaStatus.entregue:
+        return Column(
+          children: [
+            const Icon(Icons.cloud_done, size: 22, color: Colors.green),
+            const SizedBox(height: 4),
+            const Text(
+              "Sincronizado",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.green,
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        );
+    }
+  }
+
+  void _deleteComanda(BuildContext context) {
+    context.read<UserComandaStore>().deleteComanda(comanda.id);
+    ShowSnackBar(context, 'Comanda deletada com sucesso', Colors.green);
+  }
+
+  void _editComanda(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => UserSaboresEditPage(comanda: comanda),
+      ),
+    );
+  }
+
+  void _changeDate(BuildContext context) async {
+    final DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: comanda.data,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+    );
+
+    if (!context.mounted) return;
+    if (pickedDate == null || pickedDate == comanda.data) return;
+
+    final store = context.read<UserComandaStore>();
+    await store.deleteComanda(comanda.id);
+    comanda.data = pickedDate;
+    await store.addOrUpdateCard(comanda);
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 16, right: 16, top: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '${comanda.pdv}',
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.edit),
+                    onPressed: () => _editComanda(context),
+                  ),
+                  IconButton(
+                    icon: const Icon(
+                      Icons.delete,
+                      color: Colors.red,
+                    ),
+                    onPressed: () {
+                      DialogUtils.showConfirmationDialog(
+                        context: context,
+                        title: 'Excluir Item',
+                        content:
+                            'Tem certeza que deseja excluir este Relatório?',
+                        confirmText: 'Excluir',
+                        cancelText: 'Cancelar',
+                        onConfirm: () {
+                          _deleteComanda(context);
+                        },
+                      );
+                    },
+                  ),
+                  IconButton(
+                      icon: const FaIcon(FontAwesomeIcons.whatsapp),
+                      tooltip: 'Compartilhar ou Copiar', // Dica para o usuário
+                      onPressed: () async {
+                        if (!context.mounted) return;
+
+                        final store = context.read<UserComandaStore>();
+
+                        // Atualiza a comanda local
+                        comanda.status = ComandaStatus.entregue;
+
+                        // Salva no Firebase com o status novo
+                        await store.addOrUpdateCard(comanda);
+
+                        // Envia mensagem
+                        if (context.mounted) {
+                          await _shareReport(context);
+                        }
+                      }),
+                ],
+              ),
+            ],
+          ),
+          if (comanda.caixaInicial != null && comanda.caixaInicial!.isNotEmpty)
+            Text(
+              'Caixa Inicial: R\$ ${comanda.caixaInicial}',
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+            ),
+          if (comanda.caixaFinal != null && comanda.caixaFinal!.isNotEmpty)
+            Text(
+              'Caixa Final: R\$ ${comanda.caixaFinal}',
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+            ),
+          if (comanda.pixInicial != null && comanda.pixInicial!.isNotEmpty)
+            Text(
+              'Pix Inicial: R\$ ${comanda.pixInicial}',
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+            ),
+          if (comanda.pixFinal != null && comanda.pixFinal!.isNotEmpty)
+            Text(
+              'Pix Final: R\$ ${comanda.pixFinal}',
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDateRow(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 15.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          TextButton(
+              onPressed: () => _changeDate(context),
+              child: Text(
+                DateFormat('dd/MM/yyyy HH:mm').format(comanda.data),
+                style: const TextStyle(
+                    color: Colors.green, fontWeight: FontWeight.bold),
+              )),
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: _buildStatusIcon(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _buildSaborList() {
+    if (comanda.sabores.isEmpty) {
+      return [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+          child: const Text("Nenhum sabor selecionado."),
+        ),
+      ];
+    }
+
+    return comanda.sabores.entries.expand((categoria) {
+      return categoria.value.entries.map((saborEntry) {
+        final opcoesValidas = saborEntry.value.entries
+            .where((quantidadeEntry) => quantidadeEntry.value > 0)
+            .toList();
+
+        if (opcoesValidas.isEmpty) {
+          return Container();
+        }
+
+        final isMassa = categoria.key == 'Massas';
+        final isManteiga = saborEntry.key == 'Manteiga';
+        final isBolacha = categoria.key == 'Bolachas';
+        final isFestaUva = categoria.key == 'Festa da Uva';
+        final unidade = isManteiga
+            ? 'Pote'
+            : (isMassa ? 'Tubos' : (isBolacha ? 'Pacotes' : (isFestaUva ? 'Baldes' : 'Cubas')));
+        final saborNome = isManteiga
+            ? "Manteiga"
+            : (isMassa ? "Massa de ${saborEntry.key}" : saborEntry.key);
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                isBolacha ? "Bolacha de ${saborEntry.key}" : saborNome,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              ...opcoesValidas.map((quantidadeEntry) {
+                String textoExibicao;
+                if (isManteiga) {
+                  textoExibicao = "- ${quantidadeEntry.key} $unidade";
+                } else if (isMassa) {
+                  textoExibicao = "- ${quantidadeEntry.key} $unidade";
+                } else if (isBolacha) {
+                  final quantidade = int.tryParse(quantidadeEntry.key) ?? 1;
+                  final unidadePlural = quantidade > 1 ? 'Pacotes' : 'Pacote';
+                  textoExibicao = "- ${quantidadeEntry.key} $unidadePlural";
+                } else {
+                  final unidadePlural = isFestaUva
+                      ? (quantidadeEntry.value > 1 ? 'Baldes' : 'Balde')
+                      : (quantidadeEntry.value > 1 ? 'Cubas' : 'Cuba');
+                  textoExibicao =
+                      "- ${quantidadeEntry.value} $unidadePlural ${quantidadeEntry.key}";
+                }
+
+                return Padding(
+                  padding: const EdgeInsets.only(left: 16.0),
+                  child: Text(textoExibicao),
+                );
+              }).toList(),
+            ],
+          ),
+        );
+      }).toList();
+    }).toList();
+  }
+}
