@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -168,12 +169,19 @@ class UserDescartavelCard extends StatelessWidget {
 
     try {
       final encodedText = Uri.encodeComponent(reportText);
-      final Uri whatsappUri = Uri.parse('whatsapp://send?text=$encodedText');
+
+      // Use diferentes URIs dependendo da plataforma
+      final Uri whatsappUri = kIsWeb
+          ? Uri.parse('https://api.whatsapp.com/send?text=$encodedText')
+          : Uri.parse('whatsapp://send?text=$encodedText');
 
       final canLaunch = await canLaunchUrl(whatsappUri);
 
       if (canLaunch) {
-        await launchUrl(whatsappUri);
+        await launchUrl(
+          whatsappUri,
+          mode: kIsWeb ? LaunchMode.externalApplication : LaunchMode.platformDefault,
+        );
         whatsappOpened = true;
       }
     } catch (e) {
