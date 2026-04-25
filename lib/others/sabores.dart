@@ -58,7 +58,7 @@ const Map<String, List<String>> sabores = {
     'Brigadeiro com Whey',
     'Banana com Whey',
     'Caramelo com Whey',
-    'Chocolate Holandês'
+    'Chocolate Holandês',
     'Açaí Zero Açúcar',
     'Pitaya com Morango',
     'Chocolate Zero Açúcar',
