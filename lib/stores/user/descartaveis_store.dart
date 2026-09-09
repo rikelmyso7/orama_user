@@ -39,6 +39,9 @@ abstract class _DescartaveisStoreBase with Store {
   @observable
   bool isLoading = false;
 
+  bool _isSyncing = false;
+  String? syncError;
+
   @computed
   List<Descartaveis> get DescartaveisForSelectedDate =>
       _filterDescartaveisByDate(selectedDate);
@@ -75,8 +78,10 @@ abstract class _DescartaveisStoreBase with Store {
     }
   }
 
+  /// Retorna `true` se o relatório foi salvo diretamente no Firestore,
+  /// ou `false` se ficou pendente (offline ou falha de escrita).
   @action
-  Future<void> addOrUpdateCard(Descartaveis comanda) async {
+  Future<bool> addOrUpdateCard(Descartaveis comanda) async {
     final online = await _hasConnection();
 
     if (online) {
@@ -86,13 +91,23 @@ abstract class _DescartaveisStoreBase with Store {
         _upsertDescartaveis(comanda);
         _removePendingComanda(comanda);
         await _saveDescartaveisToCache();
-      } catch (_) {
+        await _savePendingDescartaveisToCache();
+        syncError = null;
+        print('✅ Descartável ${comanda.id} salvo e sincronizado com sucesso');
+        return true;
+      } catch (e) {
+        print('⚠️ Erro ao enviar descartável ${comanda.id} para Firebase: $e');
+        print('📦 Salvando descartável offline para sincronização posterior');
+        syncError = e.toString();
         comanda.status = DescartaveisStatus.pendente;
         await _savePendingComanda(comanda);
+        return false;
       }
     } else {
+      print('📴 Sem conexão - salvando descartável ${comanda.id} offline');
       comanda.status = DescartaveisStatus.pendente;
       await _savePendingComanda(comanda);
+      return false;
     }
   }
 
@@ -106,24 +121,43 @@ abstract class _DescartaveisStoreBase with Store {
 
   @action
   Future<void> syncPendingDescartaveis() async {
-    if (!await _hasConnection()) return;
-
-    final successfulSyncs = <String>[];
-
-    for (final comanda in pendingDescartaveis.toList()) {
-      try {
-        await _sendToFirestore(comanda);
-        comanda.status = DescartaveisStatus.entregue;
-        _upsertDescartaveis(comanda);
-        successfulSyncs.add(comanda.id);
-      } catch (e) {
-        print('Falha ao sincronizar comanda ${comanda.id}: $e');
-      }
+    if (_isSyncing) {
+      print('⏳ Sincronização de descartáveis já em andamento, ignorando...');
+      return;
     }
 
-    pendingDescartaveis.removeWhere((c) => successfulSyncs.contains(c.id));
-    await _savePendingDescartaveisToCache();
-    await _saveDescartaveisToCache();
+    if (!await _hasConnection()) {
+      syncError = 'Sem conexão com a internet';
+      return;
+    }
+
+    try {
+      _isSyncing = true;
+      final successfulSyncs = <String>[];
+      final failedSyncs = <String, String>{};
+
+      for (final comanda in pendingDescartaveis.toList()) {
+        try {
+          await _sendToFirestore(comanda);
+          comanda.status = DescartaveisStatus.entregue;
+          _upsertDescartaveis(comanda);
+          successfulSyncs.add(comanda.id);
+        } catch (e) {
+          failedSyncs[comanda.id] = e.toString();
+          print('❌ Falha ao sincronizar descartável ${comanda.id}: $e');
+        }
+      }
+
+      pendingDescartaveis.removeWhere((c) => successfulSyncs.contains(c.id));
+      await _savePendingDescartaveisToCache();
+      await _saveDescartaveisToCache();
+
+      syncError = failedSyncs.isEmpty
+          ? null
+          : '${failedSyncs.length} descartáveis falharam ao sincronizar';
+    } finally {
+      _isSyncing = false;
+    }
   }
 
   @action

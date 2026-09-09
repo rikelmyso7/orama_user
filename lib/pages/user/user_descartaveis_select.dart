@@ -196,7 +196,8 @@ class _UserDescartaveisSelectState extends State<UserDescartaveisSelect> {
       );
 
       // ───── 5. Salva via store (offline-ready) ─────────────────────
-      await context.read<DescartaveisStore>().addOrUpdateCard(relatorio);
+      final salvouOnline =
+          await context.read<DescartaveisStore>().addOrUpdateCard(relatorio);
 
       if (!mounted) return;
 
@@ -204,6 +205,16 @@ class _UserDescartaveisSelectState extends State<UserDescartaveisSelect> {
       Navigator.of(context)
         ..pop() // fecha o dialog
         ..pushReplacementNamed(RouteName.user_descartaveis_page);
+
+      if (salvouOnline) {
+        _mostrarSnack('Relatório salvo com sucesso!', color: Colors.green);
+      } else {
+        _mostrarSnack(
+          'Sem conexão no momento. O relatório ficou pendente e será '
+          'enviado automaticamente quando a internet voltar.',
+          color: Colors.orange,
+        );
+      }
     } catch (e) {
       Navigator.of(context).pop(); // fecha o dialog em caso de erro
       _mostrarSnack('Erro ao salvar: $e');

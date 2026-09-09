@@ -94,7 +94,7 @@ mixin _$DescartaveisStore on _DescartaveisStoreBase, Store {
       AsyncAction('_DescartaveisStoreBase.addOrUpdateCard', context: context);
 
   @override
-  Future<void> addOrUpdateCard(Descartaveis comanda) {
+  Future<bool> addOrUpdateCard(Descartaveis comanda) {
     return _$addOrUpdateCardAsyncAction
         .run(() => super.addOrUpdateCard(comanda));
   }
